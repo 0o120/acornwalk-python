@@ -576,18 +576,3 @@ class Base:
         if node.value:
             c(node.value, st, "Expression")
 
-import esprima
-
-code = '''
-let test = "hey";
-function ok() {
-    alert(23)
-}
-'''
-
-def LiteralCallback(node, *args, **kwargs):
-    print(node)
-
-simple(esprima.parse(code), {
-    'Literal': LiteralCallback
-})
