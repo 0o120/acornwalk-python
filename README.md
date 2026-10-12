@@ -69,7 +69,8 @@ Positions are nonnegative integer **UTF-16 code-unit offsets**. Searches use
 occupy two units. Offsets are read as supplied, not converted from Python scalar
 indices. With `esprima-fork`, request `range=True`. Missing/invalid positions
 raise `ValueError`. `nodeRange(node)` exposes this accessor. `getField(node,
-name, default=None)` reads mapping/attribute fields and native `async_`/`await_` aliases.
+name, default=None)` reads mapping/attribute fields and native `isAsync`/`async_`
+and `allowAwait`/`await_` aliases. An explicit canonical mapping field takes precedence.
 
 Modern traversal covers object rest/spread, async functions/generators,
 for-await metadata, chains, private names, public/private fields, static blocks,

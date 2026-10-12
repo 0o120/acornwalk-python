@@ -7,6 +7,7 @@
   callback identity and falsey state handling.
 - Repair destructuring defaults and SwitchCase traversal.
 - Add mapping ASTs, native aliases and validated UTF-16 `start/end` or `range` searches.
+- Resolve native esprima `isAsync`/`allowAwait` metadata through the same accessor.
 - Add module attributes, dynamic import options, modern field adapter and JSX handlers.
 - Add pinned reference parity, seeded search properties, packaging checks and CI.
 

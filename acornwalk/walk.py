@@ -34,7 +34,7 @@ class VisitorTable(Protocol):
 
 
 _MISSING = object()
-_ALIASES = {"async": "async_", "await": "await_"}
+_ALIASES = {"async": ("isAsync", "async_"), "await": ("allowAwait", "await_")}
 
 
 def getField(node: object, name: str, default: Any = None) -> Any:
@@ -42,11 +42,18 @@ def getField(node: object, name: str, default: Any = None) -> Any:
     if isinstance(node, Mapping):
         value = node.get(name, _MISSING)
         if value is _MISSING and name in _ALIASES:
-            value = node.get(_ALIASES[name], _MISSING)
+            for alias in _ALIASES[name]:
+                value = node.get(alias, _MISSING)
+                if value is not _MISSING:
+                    break
     else:
         value = getattr(node, name, _MISSING)
         if (value is _MISSING or value is None) and name in _ALIASES:
-            value = getattr(node, _ALIASES[name], _MISSING)
+            for alias in _ALIASES[name]:
+                candidate = getattr(node, alias, _MISSING)
+                if candidate is not _MISSING and candidate is not None:
+                    value = candidate
+                    break
     return default if value is _MISSING else value
 
 

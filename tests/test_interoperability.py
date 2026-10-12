@@ -27,6 +27,9 @@ class InteroperabilityTests(unittest.TestCase):
     def test_field_aliases_and_missing_optionals(self):
         node = SimpleNamespace(type="ForOfStatement", await_=True)
         self.assertTrue(walk.getField(node, "await"))
+        self.assertTrue(walk.getField(SimpleNamespace(isAsync=True), "async"))
+        self.assertTrue(walk.getField(SimpleNamespace(allowAwait=True), "await"))
+        self.assertFalse(walk.getField({"async": False, "isAsync": True}, "async"))
         self.assertTrue(walk.getField({"async": True}, "async"))
         self.assertIsNone(walk.getField(node, "missing"))
         expression = {"type": "ArrowFunctionExpression", "params": [], "body": literal(), "expression": True, "async": True}
