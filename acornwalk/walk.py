@@ -24,7 +24,51 @@
 #  AST walker module for Mozilla Parser API compatible trees
 
 from dataclasses import dataclass
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+
+
+_MISSING = object()
+_ALIASES = {"async": "async_", "await": "await_"}
+
+
+def getField(node, name: str, default=None):
+    """Read an ESTree field from a mapping or native node without copying it."""
+    if isinstance(node, Mapping):
+        value = node.get(name, _MISSING)
+        if value is _MISSING and name in _ALIASES:
+            value = node.get(_ALIASES[name], _MISSING)
+    else:
+        value = getattr(node, name, _MISSING)
+        if (value is _MISSING or value is None) and name in _ALIASES:
+            value = getattr(node, _ALIASES[name], _MISSING)
+    return default if value is _MISSING else value
+
+
+def _kind(node, override=None):
+    kind = getField(node, "type") if override is None else override
+    if not isinstance(kind, str) or not kind:
+        raise ValueError("AST nodes require a nonempty string type field")
+    return kind
+
+
+def nodeRange(node) -> tuple[int, int]:
+    """Return validated UTF-16 offsets, preferring start/end over range."""
+    start, end = getField(node, "start"), getField(node, "end")
+    if start is None and end is None:
+        positions = getField(node, "range")
+        if isinstance(positions, Sequence) and not isinstance(positions, (str, bytes)) and len(positions) == 2:
+            start, end = positions
+    if (isinstance(start, bool) or isinstance(end, bool) or not isinstance(start, int)
+            or not isinstance(end, int) or start < 0 or end < start):
+        raise ValueError(f"Node {getField(node, 'type', '<unknown>')!r} requires valid integer UTF-16 start/end or range offsets")
+    return start, end
+
+
+def _position(value, name):
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"{name} must be an integer UTF-16 offset")
+    if value < 0:
+        raise ValueError(f"{name} must be nonnegative")
 
 
 def _base(baseVisitor):
@@ -45,7 +89,7 @@ def simple(node, visitors, baseVisitor=None, state=None, override=None):
     """Call selected visitors after walking children (postorder)."""
     visitor = _base(baseVisitor)
     def c(node, st, override=None):
-        kind = override or node.type
+        kind = _kind(node, override)
         _dispatch(visitor, kind)(node, st, c)
         found = visitors.get(kind)
         if found is not None:
@@ -58,7 +102,7 @@ def ancestor(node, visitors, baseVisitor=None, state=None, override=None):
     visitor = _base(baseVisitor)
     ancestors = []
     def c(node, st, override=None):
-        kind = override or node.type
+        kind = _kind(node, override)
         is_new = not ancestors or ancestors[-1] is not node
         if is_new:
             ancestors.append(node)
@@ -77,7 +121,7 @@ def recursive(node, state, funcs, baseVisitor=None, override=None):
     """Walk with overrides that control their own child recursion."""
     visitor = make({} if funcs is None else funcs, baseVisitor)
     def c(node, st, override=None):
-        _dispatch(visitor, override or node.type)(node, st, c)
+        _dispatch(visitor, _kind(node, override))(node, st, c)
     c(node, state, override)
 
 
@@ -109,7 +153,7 @@ def full(node, callback, baseVisitor=None, state=None, override=None):
     last = None
     def c(node, st, override=None):
         nonlocal last
-        kind = override or node.type
+        kind = _kind(node, override)
         _dispatch(visitor, kind)(node, st, c)
         if last is not node:
             callback(node, st, kind)
@@ -124,7 +168,7 @@ def fullAncestor(node, callback, baseVisitor=None, state=None, override=None):
     last = None
     def c(node, st, override=None):
         nonlocal last
-        kind = override or node.type
+        kind = _kind(node, override)
         is_new = not ancestors or ancestors[-1] is not node
         if is_new:
             ancestors.append(node)
@@ -141,12 +185,19 @@ def fullAncestor(node, callback, baseVisitor=None, state=None, override=None):
 
 def findNodeAt(node, start, end, test=None, baseVisitor=None, state=None):
     """Find the innermost matching exact range; None is a wildcard."""
+    if start is not None:
+        _position(start, "start")
+    if end is not None:
+        _position(end, "end")
+    if start is not None and end is not None and end < start:
+        raise ValueError("end must not precede start")
     visitor, test = _base(baseVisitor), makeTest(test)
     def c(node, st, override=None):
-        kind = override or node.type
-        if (start is None or node.start <= start) and (end is None or node.end >= end):
+        node_start, node_end = nodeRange(node)
+        kind = _kind(node, override)
+        if (start is None or node_start <= start) and (end is None or node_end >= end):
             _dispatch(visitor, kind)(node, st, c)
-        if (start is None or node.start == start) and (end is None or node.end == end) and test(kind, node):
+        if (start is None or node_start == start) and (end is None or node_end == end) and test(kind, node):
             raise _Found(node, st)
     try:
         c(node, state)
@@ -157,10 +208,12 @@ def findNodeAt(node, start, end, test=None, baseVisitor=None, state=None):
 
 def findNodeAround(node, pos, test=None, baseVisitor=None, state=None):
     """Find the innermost match containing pos, including end boundaries."""
+    _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
     def c(node, st, override=None):
-        kind = override or node.type
-        if node.start > pos or node.end < pos:
+        node_start, node_end = nodeRange(node)
+        kind = _kind(node, override)
+        if node_start > pos or node_end < pos:
             return
         _dispatch(visitor, kind)(node, st, c)
         if test(kind, node):
@@ -174,12 +227,14 @@ def findNodeAround(node, pos, test=None, baseVisitor=None, state=None):
 
 def findNodeAfter(node, pos, test=None, baseVisitor=None, state=None):
     """Find the first outermost match starting at or after pos."""
+    _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
     def c(node, st, override=None):
-        if node.end < pos:
+        node_start, node_end = nodeRange(node)
+        if node_end < pos:
             return
-        kind = override or node.type
-        if node.start >= pos and test(kind, node):
+        kind = _kind(node, override)
+        if node_start >= pos and test(kind, node):
             raise _Found(node, st)
         _dispatch(visitor, kind)(node, st, c)
     try:
@@ -191,14 +246,16 @@ def findNodeAfter(node, pos, test=None, baseVisitor=None, state=None):
 
 def findNodeBefore(node, pos, test=None, baseVisitor=None, state=None):
     """Find the closest preceding match; ties favor the outer node."""
+    _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
     best = None
     def c(node, st, override=None):
+        node_start, node_end = nodeRange(node)
         nonlocal best
-        if node.start > pos:
+        if node_start > pos:
             return
-        kind = override or node.type
-        if node.end <= pos and (best is None or best.node.end < node.end) and test(kind, node):
+        kind = _kind(node, override)
+        if node_end <= pos and (best is None or nodeRange(best.node)[1] < node_end) and test(kind, node):
             best = Found(node, st)
         _dispatch(visitor, kind)(node, st, c)
     c(node, state)
@@ -238,15 +295,15 @@ class Base:
         return self.__dict__[key] if key in self.__dict__ else getattr(type(self), key)
         
     def Program(node, st, c):
-        for stmt in node.body:
+        for stmt in getField(node, "body"):
             c(stmt, st, "Statement")
 
     def BlockStatement(node, st, c):
-        for stmt in node.body:
+        for stmt in getField(node, "body"):
             c(stmt, st, "Statement")
     
     def StaticBlock(node, st, c):
-        for stmt in node.body:
+        for stmt in getField(node, "body"):
             c(stmt, st, "Statement")
 
     def Statement(node, st, c):
@@ -256,22 +313,22 @@ class Base:
         return ignore(node, st, c)
 
     def ExpressionStatement(node, st, c):
-        return c(node.expression, st, "Expression")
+        return c(getField(node, "expression"), st, "Expression")
     
     def ParenthesizedExpression(node, st, c):
-        return c(node.expression, st, "Expression")
+        return c(getField(node, "expression"), st, "Expression")
     
     def ChainExpression(node, st, c):
-        return c(node.expression, st, "Expression")
+        return c(getField(node, "expression"), st, "Expression")
         
     def IfStatement(node, st, c):
-        c(node.test, st, "Expression")
-        c(node.consequent, st, "Statement")
-        if node.alternate:
-            c(node.alternate, st, "Statement")
+        c(getField(node, "test"), st, "Expression")
+        c(getField(node, "consequent"), st, "Statement")
+        if getField(node, "alternate"):
+            c(getField(node, "alternate"), st, "Statement")
     
     def LabeledStatement(node, st, c):
-        return c(node.body, st, "Statement")
+        return c(getField(node, "body"), st, "Statement")
     
     def BreakStatement(node, st, c):
         return ignore(node, st, c)
@@ -280,80 +337,80 @@ class Base:
         return ignore(node, st, c)
     
     def WithStatement(node, st, c):
-        c(node.object, st, "Expression")
-        c(node.body, st, "Statement")
+        c(getField(node, "object"), st, "Expression")
+        c(getField(node, "body"), st, "Statement")
 
     def SwitchStatement(node, st, c):
-        c(node.discriminant, st, "Expression")
-        for cs in node.cases:
+        c(getField(node, "discriminant"), st, "Expression")
+        for cs in getField(node, "cases"):
             c(cs, st)
 
     def SwitchCase(node, st, c):
-        if node.test:
-            c(node.test, st, "Expression")
-        for cons in node.consequent:
+        if getField(node, "test"):
+            c(getField(node, "test"), st, "Expression")
+        for cons in getField(node, "consequent"):
             c(cons, st, "Statement")
 
     def ReturnStatement(node, st, c):
-        if node.argument:
-            c(node.argument, st, "Expression")
+        if getField(node, "argument"):
+            c(getField(node, "argument"), st, "Expression")
 
     def YieldExpression(node, st, c):
-        if node.argument:
-            c(node.argument, st, "Expression")
+        if getField(node, "argument"):
+            c(getField(node, "argument"), st, "Expression")
 
     def AwaitExpression(node, st, c):
-        if node.argument:
-            c(node.argument, st, "Expression")
+        if getField(node, "argument"):
+            c(getField(node, "argument"), st, "Expression")
 
     def ThrowStatement(node, st, c):
-        return c(node.argument, st, "Expression")
+        return c(getField(node, "argument"), st, "Expression")
     
     def SpreadElement(node, st, c):
-        c(node.argument, st, "Expression")
+        c(getField(node, "argument"), st, "Expression")
     
     def TryStatement(node, st, c):
-        c(node.block, st, "Statement")
-        if node.handler:
-            c(node.handler, st)
-        if node.finalizer:
-            c(node.finalizer, st, "Statement")
+        c(getField(node, "block"), st, "Statement")
+        if getField(node, "handler"):
+            c(getField(node, "handler"), st)
+        if getField(node, "finalizer"):
+            c(getField(node, "finalizer"), st, "Statement")
     
     def CatchClause(node, st, c):
-        if node.param:
-            c(node.param, st, "Pattern")
-        c(node.body, st, "Statement")
+        if getField(node, "param"):
+            c(getField(node, "param"), st, "Pattern")
+        c(getField(node, "body"), st, "Statement")
 
     def WhileStatement(node, st, c):
-        c(node.test, st, "Expression")
-        c(node.body, st, "Statement")
+        c(getField(node, "test"), st, "Expression")
+        c(getField(node, "body"), st, "Statement")
     
     def DoWhileStatement(node, st, c):
-        c(node.test, st, "Expression")
-        c(node.body, st, "Statement")
+        c(getField(node, "test"), st, "Expression")
+        c(getField(node, "body"), st, "Statement")
 
     
     def ForStatement(node, st, c):
-        if node.init:
-            c(node.init, st, "ForInit")
-        if node.test:
-            c(node.test, st, "Expression")
-        if node.update:
-            c(node.update, st, "Expression")
-        c(node.body, st, "Statement")
+        if getField(node, "init"):
+            c(getField(node, "init"), st, "ForInit")
+        if getField(node, "test"):
+            c(getField(node, "test"), st, "Expression")
+        if getField(node, "update"):
+            c(getField(node, "update"), st, "Expression")
+        c(getField(node, "body"), st, "Statement")
     
     def ForInStatement(node, st, c):
-        c(node.left, st, "ForInit")
-        c(node.right, st, "Expression")
-        c(node.body, st, "Statement")
+        c(getField(node, "left"), st, "ForInit")
+        c(getField(node, "right"), st, "Expression")
+        c(getField(node, "body"), st, "Statement")
     
     def ForOfStatement(node, st, c):
-        c(node.left, st, "ForInit")
-        c(node.right, st, "Expression")
-        c(node.body, st, "Statement")
+        c(getField(node, "left"), st, "ForInit")
+        c(getField(node, "right"), st, "Expression")
+        c(getField(node, "body"), st, "Statement")
 
     def ForInit(node, st, c):
-        if node.type == "VariableDeclaration":
+        if getField(node, "type") == "VariableDeclaration":
             c(node, st)
         else:
             c(node, st, "Expression")
@@ -365,25 +422,25 @@ class Base:
         return c(node, st, "Function")
 
     def VariableDeclaration(node, st, c):
-        for decl in node.declarations:
+        for decl in getField(node, "declarations"):
             c(decl, st)
 
     def VariableDeclarator(node, st, c):
-        c(node.id, st, "Pattern")
-        if node.init:
-            c(node.init, st, "Expression")
+        c(getField(node, "id"), st, "Pattern")
+        if getField(node, "init"):
+            c(getField(node, "init"), st, "Expression")
 
     def Function(node, st, c):
-        if node.id:
-            c(node.id, st, "Pattern")
-        for param in node.params:
+        if getField(node, "id"):
+            c(getField(node, "id"), st, "Pattern")
+        for param in getField(node, "params"):
             c(param, st, "Pattern")
-        c(node.body, st, "Expression" if node.expression else "Statement")
+        c(getField(node, "body"), st, "Expression" if getField(node, "expression") else "Statement")
 
     def Pattern(node, st, c):
-        if node.type == "Identifier":
+        if getField(node, "type") == "Identifier":
             c(node, st, "VariablePattern")
-        elif node.type == "MemberExpression":
+        elif getField(node, "type") == "MemberExpression":
             c(node, st, "MemberPattern")
         else:
             c(node, st)
@@ -395,21 +452,21 @@ class Base:
         return skipThrough(node, st, c)
 
     def RestElement(node, st, c):
-        return c(node.argument, st, "Pattern")
+        return c(getField(node, "argument"), st, "Pattern")
 
     def ArrayPattern(node, st, c):
-        for elt in node.elements:
+        for elt in getField(node, "elements"):
             if elt:
                 c(elt, st, "Pattern")
 
     def ObjectPattern(node, st, c):
-        for prop in node.properties:
-            if prop.type == 'Property':
-                if prop.computed:
-                    c(prop.key, st, "Expression")
-                c(prop.value, st, "Pattern")
-            elif prop.type == "RestElement":
-                c(prop.argument, st, "Pattern")
+        for prop in getField(node, "properties"):
+            if getField(prop, "type") == 'Property':
+                if getField(prop, "computed"):
+                    c(getField(prop, "key"), st, "Expression")
+                c(getField(prop, "value"), st, "Pattern")
+            elif getField(prop, "type") == "RestElement":
+                c(getField(prop, "argument"), st, "Pattern")
 
     def Expression(node, st, c):
         return skipThrough(node, st, c)
@@ -424,12 +481,12 @@ class Base:
         return ignore(node, st, c)
 
     def ArrayExpression(node, st, c):
-        for elt in node.elements:
+        for elt in getField(node, "elements"):
             if elt:
                 c(elt, st, "Expression")
 
     def ObjectExpression(node, st, c):
-        for prop in node.properties:
+        for prop in getField(node, "properties"):
             c(prop, st)
 
     def FunctionExpression(node, st, c):
@@ -439,86 +496,98 @@ class Base:
         return c(node, st, "Function")
 
     def SequenceExpression(node, st, c):
-        for expr in node.expressions:
+        for expr in getField(node, "expressions"):
             c(expr, st, "Expression")
 
     def TemplateLiteral(node, st, c):
-        for quasi in node.quasis:
+        for quasi in getField(node, "quasis"):
             c(quasi, st)
-        for expr in node.expressions:
+        for expr in getField(node, "expressions"):
             c(expr, st, "Expression")
 
     def TemplateElement(node, st, c):
         return ignore(node, st, c)
 
     def UnaryExpression(node, st, c):
-        c(node.argument, st, "Expression")
+        c(getField(node, "argument"), st, "Expression")
 
     def UpdateExpression(node, st, c):
-        c(node.argument, st, "Expression")
+        c(getField(node, "argument"), st, "Expression")
 
     def BinaryExpression(node, st, c):
-        c(node.left, st, "Expression")
-        c(node.right, st, "Expression")
+        c(getField(node, "left"), st, "Expression")
+        c(getField(node, "right"), st, "Expression")
 
     def LogicalExpression(node, st, c):
-        c(node.left, st, "Expression")
-        c(node.right, st, "Expression")
+        c(getField(node, "left"), st, "Expression")
+        c(getField(node, "right"), st, "Expression")
 
     def AssignmentExpression(node, st, c):
-        c(node.left, st, "Pattern")
-        c(node.right, st, "Expression")
+        c(getField(node, "left"), st, "Pattern")
+        c(getField(node, "right"), st, "Expression")
 
     def AssignmentPattern(node, st, c):
-        c(node.left, st, "Pattern")
-        c(node.right, st, "Expression")
+        c(getField(node, "left"), st, "Pattern")
+        c(getField(node, "right"), st, "Expression")
 
     def ConditionalExpression(node, st, c):
-        c(node.test, st, "Expression")
-        c(node.consequent, st, "Expression")
-        c(node.alternate, st, "Expression")
+        c(getField(node, "test"), st, "Expression")
+        c(getField(node, "consequent"), st, "Expression")
+        c(getField(node, "alternate"), st, "Expression")
 
     def NewExpression(node, st, c):
-        c(node.callee, st, "Expression")
-        if node.arguments:
-            for arg in node.arguments:
+        c(getField(node, "callee"), st, "Expression")
+        if getField(node, "arguments"):
+            for arg in getField(node, "arguments"):
                 c(arg, st, "Expression")
 
     def CallExpression(node, st, c):
-        c(node.callee, st, "Expression")
-        if node.arguments:
-            for arg in node.arguments:
+        c(getField(node, "callee"), st, "Expression")
+        if getField(node, "arguments"):
+            for arg in getField(node, "arguments"):
                 c(arg, st, "Expression")
 
     def MemberExpression(node, st, c):
-        c(node.object, st, "Expression")
-        if node.computed:
-            c(node.property, st, "Expression")
+        c(getField(node, "object"), st, "Expression")
+        if getField(node, "computed"):
+            c(getField(node, "property"), st, "Expression")
 
     def ExportNamedDeclaration(node, st, c):
-        if node.declaration:
-            c(node.declaration, st, "Statement" if (node.type == "ExportNamedDeclaration" or node.declaration.id) else "Expression")
-        if node.source:
-            c(node.source, st, "Expression")
+        if getField(node, "declaration"):
+            c(getField(node, "declaration"), st, "Statement" if (getField(node, "type") == "ExportNamedDeclaration" or getField(getField(node, "declaration"), "id")) else "Expression")
+        if getField(node, "source"):
+            c(getField(node, "source"), st, "Expression")
+        for attribute in getField(node, "attributes", ()) or ():
+            c(attribute, st)
 
     def ExportDefaultDeclaration(node, st, c):
-        if node.declaration:
-            c(node.declaration, st, "Statement" if (node.type == "ExportNamedDeclaration" or node.declaration.id) else "Expression")
-        if node.source:
-            c(node.source, st, "Expression")
+        if getField(node, "declaration"):
+            declaration = getField(node, "declaration")
+            c(declaration, st, "Statement" if _kind(declaration).endswith("Declaration") else "Expression")
+        if getField(node, "source"):
+            c(getField(node, "source"), st, "Expression")
 
     def ExportAllDeclaration(node, st, c):
-        if node.exported:
-            c(node.exported, st)
-        c(node.source, st, "Expression")
+        if getField(node, "exported"):
+            c(getField(node, "exported"), st)
+        c(getField(node, "source"), st, "Expression")
+        for attribute in getField(node, "attributes", ()) or ():
+            c(attribute, st)
 
     def ImportDeclaration(node, st, c):
-        for spec in node.specifiers:
+        for spec in getField(node, "specifiers"):
             c(spec, st)
-        c(node.source, st, "Expression")
+        c(getField(node, "source"), st, "Expression")
+        for attribute in getField(node, "attributes", ()) or ():
+            c(attribute, st)
+
+    def ImportAttribute(node, st, c):
+        c(getField(node, "value"), st, "Expression")
 
     def ImportExpression(node, st, c):
-        c(node.source, st, "Expression")
+        c(getField(node, "source"), st, "Expression")
+        if getField(node, "options") is not None:
+            c(getField(node, "options"), st, "Expression")
 
     def ImportSpecifier(node, st, c):
         return ignore(node, st, c)
@@ -539,8 +608,8 @@ class Base:
         return ignore(node, st, c)
 
     def TaggedTemplateExpression(node, st, c):
-        c(node.tag, st, "Expression")
-        c(node.quasi, st, "Expression")
+        c(getField(node, "tag"), st, "Expression")
+        c(getField(node, "quasi"), st, "Expression")
 
     def ClassDeclaration(node, st, c):
         return c(node, st, "Class")
@@ -549,31 +618,82 @@ class Base:
         return c(node, st, "Class")
 
     def Class(node, st, c):
-        if node.id:
-            c(node.id, st, "Pattern")
-        if node.superClass:
-            c(node.superClass, st, "Expression")
-        c(node.body, st)
+        if getField(node, "id"):
+            c(getField(node, "id"), st, "Pattern")
+        if getField(node, "superClass"):
+            c(getField(node, "superClass"), st, "Expression")
+        c(getField(node, "body"), st)
 
     def ClassBody(node, st, c):
-        for elt in node.body:
+        for elt in getField(node, "body"):
             c(elt, st)
 
     def MethodDefinition(node, st, c):
-        if node.computed:
-            c(node.key, st, "Expression")
-        if node.value:
-            c(node.value, st, "Expression")
+        if getField(node, "computed"):
+            c(getField(node, "key"), st, "Expression")
+        if getField(node, "value"):
+            c(getField(node, "value"), st, "Expression")
 
     def PropertyDefinition(node, st, c):
-        if node.computed:
-            c(node.key, st, "Expression")
-        if node.value:
-            c(node.value, st, "Expression")
+        if getField(node, "computed"):
+            c(getField(node, "key"), st, "Expression")
+        if getField(node, "value"):
+            c(getField(node, "value"), st, "Expression")
 
     def Property(node, st, c):
-        if node.computed:
-            c(node.key, st, "Expression")
-        if node.value:
-            c(node.value, st, "Expression")
+        if getField(node, "computed"):
+            c(getField(node, "key"), st, "Expression")
+        if getField(node, "value"):
+            c(getField(node, "value"), st, "Expression")
+
+    # The old parser used FieldDefinition for modern PropertyDefinition.
+    FieldDefinition = PropertyDefinition
+
+    # JSX is an explicit parser extension. Names have JSX-specific leaf types,
+    # so they are observable without being reported as evaluated Identifiers.
+    def JSXElement(node, st, c):
+        c(getField(node, "openingElement"), st)
+        for child in getField(node, "children", ()):
+            c(child, st)
+        if getField(node, "closingElement") is not None:
+            c(getField(node, "closingElement"), st)
+
+    def JSXFragment(node, st, c):
+        c(getField(node, "openingFragment"), st)
+        for child in getField(node, "children", ()):
+            c(child, st)
+        c(getField(node, "closingFragment"), st)
+
+    def JSXOpeningElement(node, st, c):
+        c(getField(node, "name"), st)
+        for attribute in getField(node, "attributes", ()):
+            c(attribute, st)
+
+    def JSXClosingElement(node, st, c):
+        c(getField(node, "name"), st)
+
+    def JSXAttribute(node, st, c):
+        c(getField(node, "name"), st)
+        if getField(node, "value") is not None:
+            c(getField(node, "value"), st)
+
+    def JSXExpressionContainer(node, st, c):
+        expression = getField(node, "expression")
+        c(expression, st, None if _kind(expression) == "JSXEmptyExpression" else "Expression")
+
+    def JSXSpreadAttribute(node, st, c):
+        c(getField(node, "argument"), st, "Expression")
+
+    def JSXSpreadChild(node, st, c):
+        c(getField(node, "expression"), st, "Expression")
+
+    def JSXMemberExpression(node, st, c):
+        c(getField(node, "object"), st)
+        c(getField(node, "property"), st)
+
+    def JSXNamespacedName(node, st, c):
+        c(getField(node, "namespace"), st)
+        c(getField(node, "name"), st)
+
+    JSXIdentifier = JSXText = JSXEmptyExpression = JSXOpeningFragment = JSXClosingFragment = ignore
 
