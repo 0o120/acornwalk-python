@@ -25,13 +25,19 @@
 
 from dataclasses import dataclass
 from collections.abc import Mapping, Sequence
+from typing import Any, Protocol
+
+
+class VisitorTable(Protocol):
+    """Indexed dispatch contract accepted by baseVisitor parameters."""
+    def __getitem__(self, kind: str): ...
 
 
 _MISSING = object()
 _ALIASES = {"async": "async_", "await": "await_"}
 
 
-def getField(node, name: str, default=None):
+def getField(node: object, name: str, default: Any = None) -> Any:
     """Read an ESTree field from a mapping or native node without copying it."""
     if isinstance(node, Mapping):
         value = node.get(name, _MISSING)
@@ -44,14 +50,14 @@ def getField(node, name: str, default=None):
     return default if value is _MISSING else value
 
 
-def _kind(node, override=None):
+def _kind(node: object, override: str | None = None) -> str:
     kind = getField(node, "type") if override is None else override
     if not isinstance(kind, str) or not kind:
         raise ValueError("AST nodes require a nonempty string type field")
     return kind
 
 
-def nodeRange(node) -> tuple[int, int]:
+def nodeRange(node: object) -> tuple[int, int]:
     """Return validated UTF-16 offsets, preferring start/end over range."""
     start, end = getField(node, "start"), getField(node, "end")
     if start is None and end is None:
@@ -71,7 +77,7 @@ def _position(value, name):
         raise ValueError(f"{name} must be nonnegative")
 
 
-def _base(baseVisitor):
+def _base(baseVisitor: VisitorTable | None) -> VisitorTable:
     return Base() if baseVisitor is None else baseVisitor
 
 
@@ -183,7 +189,7 @@ def fullAncestor(node, callback, baseVisitor=None, state=None, override=None):
     c(node, state, override)
 
 
-def findNodeAt(node, start, end, test=None, baseVisitor=None, state=None):
+def findNodeAt(node: object, start: int | None, end: int | None, test=None, baseVisitor=None, state=None) -> Found | None:
     """Find the innermost matching exact range; None is a wildcard."""
     if start is not None:
         _position(start, "start")
@@ -206,7 +212,7 @@ def findNodeAt(node, start, end, test=None, baseVisitor=None, state=None):
     return None
 
 
-def findNodeAround(node, pos, test=None, baseVisitor=None, state=None):
+def findNodeAround(node: object, pos: int, test=None, baseVisitor=None, state=None) -> Found | None:
     """Find the innermost match containing pos, including end boundaries."""
     _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
@@ -225,7 +231,7 @@ def findNodeAround(node, pos, test=None, baseVisitor=None, state=None):
     return None
 
 
-def findNodeAfter(node, pos, test=None, baseVisitor=None, state=None):
+def findNodeAfter(node: object, pos: int, test=None, baseVisitor=None, state=None) -> Found | None:
     """Find the first outermost match starting at or after pos."""
     _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
@@ -244,7 +250,7 @@ def findNodeAfter(node, pos, test=None, baseVisitor=None, state=None):
     return None
 
 
-def findNodeBefore(node, pos, test=None, baseVisitor=None, state=None):
+def findNodeBefore(node: object, pos: int, test=None, baseVisitor=None, state=None) -> Found | None:
     """Find the closest preceding match; ties favor the outer node."""
     _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)

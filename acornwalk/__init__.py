@@ -1,3 +1,5 @@
+"""Semantic ESTree traversal preserving native and mapping node identity."""
+from ._version import __version__
 from .walk import (
     simple,
     ancestor,
