@@ -16,7 +16,8 @@ Evidence on Python 3.11 and 3.12 / Node.js 24:
   expression trees, including UTF-16 astral offsets and wildcard/category tests.
 - Source archive builds; wheel built from the archive passes metadata, clean
   extracted-wheel import and all Python README examples.
-- CI is configured for Python 3.11–3.15 on Linux and Windows. Remote CI has not
+- CI is configured for Python 3.11–3.15 on Linux and Windows, plus macOS 3.11/3.15.
+  Remote CI has not
   been executed or published by this local implementation.
 
 Limits: a semantic walker cannot establish parser grammar conformance or
