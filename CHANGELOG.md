@@ -9,6 +9,8 @@
 - Add mapping ASTs, native aliases and validated UTF-16 `start/end` or `range` searches.
 - Resolve native esprima `isAsync`/`allowAwait` metadata through the same accessor.
 - Honor accessor defaults for missing native fields while retaining declared nulls.
+- Avoid repeated mapping ABC checks for ordinary mappings/attribute nodes, while
+  preserving descriptors, custom mapping methods and virtual registration.
 - Add module attributes, dynamic import options, modern field adapter and JSX handlers.
 - Add pinned reference parity, seeded search properties, packaging checks and CI.
 

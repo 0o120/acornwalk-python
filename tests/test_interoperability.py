@@ -1,6 +1,8 @@
 import copy
 from types import SimpleNamespace
 import unittest
+from collections import UserDict
+from collections.abc import Mapping
 
 import acornwalk as walk
 
@@ -48,6 +50,51 @@ class InteroperabilityTests(unittest.TestCase):
         native = Native()
         self.assertEqual(walk.getField(native, "missing", ()), ())
         self.assertIsNone(walk.getField(native, "optional", False))
+
+    def test_fast_access_preserves_custom_properties_and_mapping_get(self):
+        class Namespace(SimpleNamespace):
+            @property
+            def type(self):
+                return "Literal"
+        node = Namespace()
+        node.__dict__["type"] = "Identifier"
+        self.assertEqual(walk.getField(node, "type"), "Literal")
+        class Custom(dict):
+            def get(self, name, default=None):
+                return "Literal" if name == "type" else super().get(name, default)
+        custom = Custom(type="Identifier", value=1)
+        self.assertEqual(walk.getField(custom, "type"), "Literal")
+        self.assertEqual(walk.getField(UserDict(type="Identifier"), "type"), "Identifier")
+        seen = []
+        walk.full(custom, lambda node, state, category: seen.append((node, category)))
+        self.assertIs(seen[0][0], custom)
+        self.assertEqual(seen[0][1], "Literal")
+
+    def test_cached_mapping_detection_tracks_virtual_registration(self):
+        class Virtual:
+            type = "AttributeType"
+            def get(self, name, default=None):
+                return "MappingType" if name == "type" else default
+        node = Virtual()
+        self.assertEqual(walk.getField(node, "type"), "AttributeType")
+        Mapping.register(Virtual)
+        self.assertEqual(walk.getField(node, "type"), "MappingType")
+
+    def test_class_proxy_mapping_and_native_descriptors(self):
+        class Proxy:
+            @property
+            def __class__(self):
+                return UserDict
+            def get(self, name, default=None):
+                return "Literal" if name == "type" else default
+        self.assertEqual(walk.getField(Proxy(), "type"), "Literal")
+        class Native:
+            @property
+            def type(self):
+                return "Literal"
+            def __init__(self):
+                self.__dict__["type"] = "Identifier"
+        self.assertEqual(walk.getField(Native(), "type"), "Literal")
 
     def test_position_validation(self):
         self.assertEqual(walk.nodeRange(SimpleNamespace(type="Identifier", range=[2, 4])), (2, 4))

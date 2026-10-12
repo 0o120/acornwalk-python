@@ -6,11 +6,13 @@ The API and compatibility contract are described in README and CHANGELOG.
 Evidence on Python 3.11 and 3.12 / Node.js 24:
 
 - The original 13 engine regression tests failed on the baseline, then passed.
-- 24 unit/property/reference tests pass with warnings treated as errors.
+- 27 unit/property/reference tests pass with warnings treated as errors.
 - Every concrete core handler has a fixture. Native/mapping callback ordering and
   original-node identity are verified; modules, modern classes and JSX have tests.
 - Native async/for-await aliases and missing-field defaults versus declared nulls
   are covered by the coordinated toolchain checks.
+- Exact mapping/namespace fast paths and bounded mapping-type detection retain
+  custom get methods, native descriptors, class proxies and virtual registration.
 - Full and ancestor order match checksum-pinned acorn-walk/acorn 8.15.0.
 - All search variants match pinned upstream across 50 deterministic generated
   expression trees, including UTF-16 astral offsets and wildcard/category tests.

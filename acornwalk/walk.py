@@ -26,6 +26,8 @@
 from dataclasses import dataclass
 from collections.abc import Mapping, Sequence
 from typing import Any, Protocol
+from types import SimpleNamespace
+from abc import get_cache_token
 
 
 class VisitorTable(Protocol):
@@ -35,6 +37,22 @@ class VisitorTable(Protocol):
 
 _MISSING = object()
 _ALIASES = {"async": ("isAsync", "async_"), "await": ("allowAwait", "await_")}
+_MAPPING_TYPES = {}
+
+
+def _is_mapping(node):
+    node_type = type(node)
+    # Python's isinstance also observes an object's custom __class__ proxy.
+    if node.__class__ is not node_type:
+        return isinstance(node, Mapping)
+    token = get_cache_token()
+    cached = _MAPPING_TYPES.get(node_type)
+    if cached is None or cached[0] != token:
+        cached = (token, issubclass(node_type, Mapping))
+        if len(_MAPPING_TYPES) >= 128:
+            _MAPPING_TYPES.clear()
+        _MAPPING_TYPES[node_type] = cached
+    return cached[1]
 
 
 def _attribute(node, name):
@@ -52,7 +70,17 @@ def _attribute(node, name):
 
 def getField(node: object, name: str, default: Any = None) -> Any:
     """Read an ESTree field from a mapping or native node without copying it."""
-    if isinstance(node, Mapping):
+    node_type = type(node)
+    if node_type is SimpleNamespace:
+        fields = node.__dict__
+        value = fields.get(name, _MISSING)
+        if (value is _MISSING or value is None) and name in _ALIASES:
+            for alias in _ALIASES[name]:
+                candidate = fields.get(alias, _MISSING)
+                if candidate is not _MISSING and candidate is not None:
+                    value = candidate
+                    break
+    elif node_type is dict or _is_mapping(node):
         value = node.get(name, _MISSING)
         if value is _MISSING and name in _ALIASES:
             for alias in _ALIASES[name]:
@@ -71,7 +99,14 @@ def getField(node: object, name: str, default: Any = None) -> Any:
 
 
 def _kind(node: object, override: str | None = None) -> str:
-    kind = getField(node, "type") if override is None else override
+    if override is not None:
+        kind = override
+    elif type(node) is dict:
+        kind = node.get("type")
+    elif type(node) is SimpleNamespace:
+        kind = node.__dict__.get("type")
+    else:
+        kind = getField(node, "type")
     if not isinstance(kind, str) or not kind:
         raise ValueError("AST nodes require a nonempty string type field")
     return kind
