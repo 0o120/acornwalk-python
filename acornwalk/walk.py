@@ -221,10 +221,19 @@ def _default_dispatch(_visitor, kind):
     return handler
 
 
+def _select_dispatch(visitor, base_visitor):
+    if (base_visitor is None and type(visitor) is _DEFAULT_BASE_CLASS
+            and not visitor.__dict__
+            and Base.__init__ is _DEFAULT_BASE_INIT
+            and Base.__getitem__ is _DEFAULT_BASE_GETITEM):
+        return _default_dispatch
+    return _dispatch
+
+
 def simple(node, visitors, baseVisitor=None, state=None, override=None):
     """Call selected visitors after walking children (postorder)."""
     visitor = _base(baseVisitor)
-    dispatch = _default_dispatch if baseVisitor is None else _dispatch
+    dispatch = _select_dispatch(visitor, baseVisitor)
     def c(node, st, override=None):
         kind = _kind(node, override)
         dispatch(visitor, kind)(node, st, c)
@@ -237,7 +246,7 @@ def simple(node, visitors, baseVisitor=None, state=None, override=None):
 def ancestor(node, visitors, baseVisitor=None, state=None, override=None):
     """Like simple, with the current ancestor stack as a third argument."""
     visitor = _base(baseVisitor)
-    dispatch = _default_dispatch if baseVisitor is None else _dispatch
+    dispatch = _select_dispatch(visitor, baseVisitor)
     ancestors = []
     def c(node, st, override=None):
         kind = _kind(node, override)
@@ -340,7 +349,7 @@ class _Found(Exception):
 def full(node, callback, baseVisitor=None, state=None, override=None):
     """Call callback once per node after its semantic children."""
     visitor = _base(baseVisitor)
-    dispatch = _default_dispatch if baseVisitor is None else _dispatch
+    dispatch = _select_dispatch(visitor, baseVisitor)
     last = None
     def c(node, st, override=None):
         nonlocal last
@@ -363,7 +372,7 @@ def full(node, callback, baseVisitor=None, state=None, override=None):
 def fullAncestor(node, callback, baseVisitor=None, state=None, override=None):
     """A full walk with callback(node, state, ancestors, category)."""
     visitor = _base(baseVisitor)
-    dispatch = _default_dispatch if baseVisitor is None else _dispatch
+    dispatch = _select_dispatch(visitor, baseVisitor)
     ancestors = []
     last = None
     def c(node, st, override=None):
@@ -397,7 +406,7 @@ def findNodeAt(node: object, start: int | None, end: int | None, test=None, base
     if start is not None and end is not None and end < start:
         raise ValueError("end must not precede start")
     visitor, test = _base(baseVisitor), makeTest(test)
-    dispatch = _default_dispatch if baseVisitor is None else _dispatch
+    dispatch = _select_dispatch(visitor, baseVisitor)
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
         kind = _kind(node, override)
@@ -416,7 +425,7 @@ def findNodeAround(node: object, pos: int, test=None, baseVisitor=None, state=No
     """Find the innermost match containing pos, including end boundaries."""
     _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
-    dispatch = _default_dispatch if baseVisitor is None else _dispatch
+    dispatch = _select_dispatch(visitor, baseVisitor)
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
         kind = _kind(node, override)
@@ -436,7 +445,7 @@ def findNodeAfter(node: object, pos: int, test=None, baseVisitor=None, state=Non
     """Find the first outermost match starting at or after pos."""
     _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
-    dispatch = _default_dispatch if baseVisitor is None else _dispatch
+    dispatch = _select_dispatch(visitor, baseVisitor)
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
         if node_end < pos:
@@ -456,7 +465,7 @@ def findNodeBefore(node: object, pos: int, test=None, baseVisitor=None, state=No
     """Find the closest preceding match; ties favor the outer node."""
     _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
-    dispatch = _default_dispatch if baseVisitor is None else _dispatch
+    dispatch = _select_dispatch(visitor, baseVisitor)
     best = None
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
@@ -954,4 +963,9 @@ class Base:
         c(read("name"), st)
 
     JSXIdentifier = JSXText = JSXEmptyExpression = JSXOpeningFragment = JSXClosingFragment = ignore
+
+
+_DEFAULT_BASE_CLASS = Base
+_DEFAULT_BASE_INIT = Base.__init__
+_DEFAULT_BASE_GETITEM = Base.__getitem__
 

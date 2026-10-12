@@ -149,6 +149,27 @@ class EngineTests(unittest.TestCase):
         finally:
             walk.Base.Literal = original
 
+    def test_customized_default_base_constructor_and_lookup_are_preserved(self):
+        original_init, original_getitem = walk.Base.__init__, walk.Base.__getitem__
+        node = Node(type="Literal", value=1)
+        seen = []
+        try:
+            def initialize(instance):
+                instance.Literal = lambda node, state, recurse: seen.append(node)
+            walk.Base.__init__ = initialize
+            walk.full(node, lambda *args: None)
+            self.assertEqual(seen, [node])
+            walk.Base.__init__ = original_init
+            seen.clear()
+            def lookup(instance, kind):
+                seen.append(kind)
+                return original_getitem(instance, kind)
+            walk.Base.__getitem__ = lookup
+            walk.full(node, lambda *args: None)
+            self.assertEqual(seen, ["Literal"])
+        finally:
+            walk.Base.__init__, walk.Base.__getitem__ = original_init, original_getitem
+
     def test_full_category_delegation_preserves_custom_lookup_and_state(self):
         for operation in (walk.full, walk.fullAncestor):
             lookups, seen = [], []
