@@ -1,12 +1,17 @@
 from .walk import (
     simple,
     ancestor,
-    ancestor,
+    recursive,
     full,
     fullAncestor,
     make,
     findNodeAt,
     findNodeAround,
     findNodeAfter,
-    Base
+    findNodeBefore,
+    Found,
+    Base,
 )
+
+__all__ = ["simple", "ancestor", "recursive", "full", "fullAncestor", "make",
+           "findNodeAt", "findNodeAround", "findNodeAfter", "findNodeBefore", "Base", "Found"]

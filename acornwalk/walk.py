@@ -23,197 +23,200 @@
 
 #  AST walker module for Mozilla Parser API compatible trees
 
-#  A simple walk is one where you simply specify callbacks to be
-#  called on specific nodes. The last two arguments are optional. A
-#  simple use would be
-# 
-#      walk.simple(myTree, {
-#          Expression: function(node) { ... }
-#      });
-# 
-#  to do something with all expressions. All Parser API node types
-#  can be used to identify node types, as well as Expression and
-#  Statement, which denote categories of nodes.
-# 
-#  The base argument can be used to pass a custom (recursive)
-#  walker, and state can be used to give this walked an initial
-#  state.
+from dataclasses import dataclass
+from collections.abc import Mapping
+
+
+def _base(baseVisitor):
+    return Base() if baseVisitor is None else baseVisitor
+
+
+def _dispatch(visitor, kind):
+    try:
+        handler = visitor[kind]
+    except (KeyError, AttributeError) as exc:
+        raise ValueError(f"No walker for node type {kind!r}; provide a custom base visitor") from exc
+    if not callable(handler):
+        raise TypeError(f"Walker for node type {kind!r} must be callable")
+    return handler
+
 
 def simple(node, visitors, baseVisitor=None, state=None, override=None):
-    baseVisitor = baseVisitor or Base()
+    """Call selected visitors after walking children (postorder)."""
+    visitor = _base(baseVisitor)
     def c(node, st, override=None):
-        _type = override or node.type
-        found = visitors.get(_type)
-        baseVisitor[_type](node, st, c)
-        if found:
+        kind = override or node.type
+        _dispatch(visitor, kind)(node, st, c)
+        found = visitors.get(kind)
+        if found is not None:
             found(node, st)
     c(node, state, override)
 
 
-#  An ancestor walk keeps an array of ancestor nodes (including the
-#  current node) and passes them to the callback as third parameter
-#  (and also as state parameter when no other state is present).
-
 def ancestor(node, visitors, baseVisitor=None, state=None, override=None):
+    """Like simple, with the current ancestor stack as a third argument."""
+    visitor = _base(baseVisitor)
     ancestors = []
-    if not baseVisitor:
-        baseVisitor = Base()
     def c(node, st, override=None):
-        _type = override or node.type
-        found = visitors.get(_type)
-        isNew = node != (None if len(ancestors) - 1 < 0 else ancestors[len(ancestors) - 1])
-        if isNew:
+        kind = override or node.type
+        is_new = not ancestors or ancestors[-1] is not node
+        if is_new:
             ancestors.append(node)
-        baseVisitor[_type](node, st, c)
-        if found:
-            found(node, st or ancestors, ancestors)
-        if isNew:
-            ancestors.pop()
+        try:
+            _dispatch(visitor, kind)(node, st, c)
+            found = visitors.get(kind)
+            if found is not None:
+                found(node, ancestors if st is None else st, ancestors)
+        finally:
+            if is_new:
+                ancestors.pop()
     c(node, state, override)
 
 
-#  A recursive walk is one where your functions override the default
-#  walkers. They can modify and replace the state parameter that's
-#  threaded through the walk, and can opt how and whether to walk
-#  their child nodes (by calling their third argument on these
-#  nodes).
 def recursive(node, state, funcs, baseVisitor=None, override=None):
-    visitor = make(funcs, baseVisitor or None) if funcs else baseVisitor
-    def c(node, st, override):
-        visitor[override or node.type](node, st, c)
+    """Walk with overrides that control their own child recursion."""
+    visitor = make({} if funcs is None else funcs, baseVisitor)
+    def c(node, st, override=None):
+        _dispatch(visitor, override or node.type)(node, st, c)
     c(node, state, override)
 
 
 def makeTest(test):
-    if type(test) == str:
-        return lambda _type: _type == test
-    elif not test:
-        return lambda:True
-    else:
-        return test
+    if isinstance(test, str):
+        return lambda kind, node: kind == test
+    if test is None:
+        return lambda kind, node: True
+    if not callable(test):
+        raise TypeError("Search test must be a node type string, callable, or None")
+    return test
 
 
+@dataclass(frozen=True)
 class Found:
+    """A search match retaining the original node and state."""
+    node: object
+    state: object
+
+
+class _Found(Exception):
     def __init__(self, node, state):
-        self.node = node
-        self.state = state
+        self.result = Found(node, state)
 
 
-#  A full walk triggers the callback on each node
 def full(node, callback, baseVisitor=None, state=None, override=None):
-    baseVisitor = baseVisitor or Base()
+    """Call callback once per node after its semantic children."""
+    visitor = _base(baseVisitor)
     last = None
     def c(node, st, override=None):
         nonlocal last
-        _type = override or node.type
-        baseVisitor[_type](node, st, c)
-        if last != node:
-            callback(node, st, _type)
+        kind = override or node.type
+        _dispatch(visitor, kind)(node, st, c)
+        if last is not node:
+            callback(node, st, kind)
             last = node
     c(node, state, override)
 
 
-#  An fullAncestor walk is like an ancestor walk, but triggers
-#  the callback on each node
-def fullAncestor(node, callback, baseVisitor, state=None):
-    baseVisitor = baseVisitor or Base()
+def fullAncestor(node, callback, baseVisitor=None, state=None, override=None):
+    """A full walk with callback(node, state, ancestors, category)."""
+    visitor = _base(baseVisitor)
     ancestors = []
     last = None
-    
     def c(node, st, override=None):
-        _type = override or node.type
-        isNew = node != (None if len(ancestors) - 1 < 0 else ancestors[len(ancestors) - 1])
-        if isNew:
+        nonlocal last
+        kind = override or node.type
+        is_new = not ancestors or ancestors[-1] is not node
+        if is_new:
             ancestors.append(node)
-        baseVisitor[type](node, st, c)
-        if last != node:
-            callback(node, st or ancestors, ancestors, type)
-            last = node
-        if isNew:
-            ancestors.pop()
-    c(node, state)
+        try:
+            _dispatch(visitor, kind)(node, st, c)
+            if last is not node:
+                callback(node, ancestors if st is None else st, ancestors, kind)
+                last = node
+        finally:
+            if is_new:
+                ancestors.pop()
+    c(node, state, override)
 
 
-#  Find a node with a given start, end, and type (all are optional,
-#  null can be used as wildcard). Returns a {node, state} object, or
-#  undefined when it doesn't find a matching node.
-def findNodeAt(node, start, end, test, baseVisitor=None, state=None):
-    baseVisitor = baseVisitor or Base()
-    test = makeTest(test)
-    try:
-        def c(node, st, override=None):
-            _type = override or node.type
-            if (start is None or node.start <= start) and (end is None or node.end >= end):
-                baseVisitor[_type](node, st, c)
-            if (start is None or node.start == start) and (end is None or node.end == end) and test(_type, node):
-                raise Found(node, st)
-        c(node, state)
-    except Exception as e:
-        if isinstance(e, Found):
-            return e
-        raise e
-
-
-#  Find the innermost node of a given type that contains the given
-#  position. Interface similar to findNodeAt.
-def findNodeAround(node, pos, test, baseVisitor=None, state=None):
-    test = makeTest(test)
-    baseVisitor = baseVisitor or Base()
-    try:
-        def c(node, st, override=None):
-            _type = override or node.type
-            if node.start > pos or node.end < pos:
-                return
-        c(node, state)
-    except Exception as e:
-        if isinstance(e, Found):
-            return e
-        raise e
-
-
-#  Find the outermost matching node after a given position.
-def findNodeAfter(node, pos, test, baseVisitor=None, state=None):
-    test = makeTest(test)
-    baseVisitor = baseVisitor or Base()
-    try:
-        def c(node, st, override=None):
-            if node.end < pos:
-                return
-            _type = override or node.type
-            if node.start >= pos and test(_type, node):
-                raise Found(node, st)
-            baseVisitor[type](node, st, c)
-        c(node, state)
-    except Exception as e:
-        if isinstance(e, Found):
-            return e
-        raise e
-
-
-#  Find the outermost matching node before a given position.
-def findNodeBefore(node, pos, test, baseVisitor=None, state=None):
-    test = makeTest(test)
-    baseVisitor = baseVisitor or Base()
-    _max = None
-  
+def findNodeAt(node, start, end, test=None, baseVisitor=None, state=None):
+    """Find the innermost matching exact range; None is a wildcard."""
+    visitor, test = _base(baseVisitor), makeTest(test)
     def c(node, st, override=None):
+        kind = override or node.type
+        if (start is None or node.start <= start) and (end is None or node.end >= end):
+            _dispatch(visitor, kind)(node, st, c)
+        if (start is None or node.start == start) and (end is None or node.end == end) and test(kind, node):
+            raise _Found(node, st)
+    try:
+        c(node, state)
+    except _Found as found:
+        return found.result
+    return None
+
+
+def findNodeAround(node, pos, test=None, baseVisitor=None, state=None):
+    """Find the innermost match containing pos, including end boundaries."""
+    visitor, test = _base(baseVisitor), makeTest(test)
+    def c(node, st, override=None):
+        kind = override or node.type
+        if node.start > pos or node.end < pos:
+            return
+        _dispatch(visitor, kind)(node, st, c)
+        if test(kind, node):
+            raise _Found(node, st)
+    try:
+        c(node, state)
+    except _Found as found:
+        return found.result
+    return None
+
+
+def findNodeAfter(node, pos, test=None, baseVisitor=None, state=None):
+    """Find the first outermost match starting at or after pos."""
+    visitor, test = _base(baseVisitor), makeTest(test)
+    def c(node, st, override=None):
+        if node.end < pos:
+            return
+        kind = override or node.type
+        if node.start >= pos and test(kind, node):
+            raise _Found(node, st)
+        _dispatch(visitor, kind)(node, st, c)
+    try:
+        c(node, state)
+    except _Found as found:
+        return found.result
+    return None
+
+
+def findNodeBefore(node, pos, test=None, baseVisitor=None, state=None):
+    """Find the closest preceding match; ties favor the outer node."""
+    visitor, test = _base(baseVisitor), makeTest(test)
+    best = None
+    def c(node, st, override=None):
+        nonlocal best
         if node.start > pos:
             return
-        _type = override or node.type
-        if node.end <= pos and (not _max or _max.node.end < node.end) and test(_type, node):
-            _max = Found(node, st)
-        baseVisitor[type](node, st, c)
+        kind = override or node.type
+        if node.end <= pos and (best is None or best.node.end < node.end) and test(kind, node):
+            best = Found(node, st)
+        _dispatch(visitor, kind)(node, st, c)
     c(node, state)
-    return _max
+    return best
 
 
-#  Used to create a custom walker. Will fill in all missing node
-#  type properties with the defaults.
+class _Overlay:
+    def __init__(self, funcs, base):
+        self.funcs = dict(funcs)
+        self.base = base
+
+    def __getitem__(self, kind):
+        return self.funcs[kind] if kind in self.funcs else self.base[kind]
+
+
 def make(funcs, baseVisitor=None):
-    visitor = baseVisitor or Base()
-    for _type in funcs:
-        setattr(visitor, _type, funcs[_type])
-    return visitor
+    """Overlay handlers without modifying the supplied base."""
+    return _Overlay(funcs, _base(baseVisitor))
 
 
 def skipThrough(node, st, c):
@@ -232,7 +235,7 @@ class Base:
         pass
     
     def __getitem__(self, key):
-        return getattr(Base, key)
+        return self.__dict__[key] if key in self.__dict__ else getattr(type(self), key)
         
     def Program(node, st, c):
         for stmt in node.body:
@@ -249,7 +252,7 @@ class Base:
     def Statement(node, st, c):
         return skipThrough(node, st, c)
         
-    def EmptyStatement():
+    def EmptyStatement(node, st, c):
         return ignore(node, st, c)
 
     def ExpressionStatement(node, st, c):
@@ -283,10 +286,7 @@ class Base:
     def SwitchStatement(node, st, c):
         c(node.discriminant, st, "Expression")
         for cs in node.cases:
-            if cs.test:
-                c(cs.test, st, "Expression")
-            for cons in cs.consequent:
-                c(cons, st, "Statement")
+            c(cs, st)
 
     def SwitchCase(node, st, c):
         if node.test:
@@ -407,6 +407,7 @@ class Base:
             if prop.type == 'Property':
                 if prop.computed:
                     c(prop.key, st, "Expression")
+                c(prop.value, st, "Pattern")
             elif prop.type == "RestElement":
                 c(prop.argument, st, "Pattern")
 
