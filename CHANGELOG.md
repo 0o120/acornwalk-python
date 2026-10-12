@@ -11,6 +11,8 @@
 - Honor accessor defaults for missing native fields while retaining declared nulls.
 - Avoid repeated mapping ABC checks for ordinary mappings/attribute nodes, while
   preserving descriptors, custom mapping methods and virtual registration.
+- Keep Found results lightweight and immutable; ship typing information as stubs
+  rather than loading typing/dataclass machinery on runtime import.
 - Add module attributes, dynamic import options, modern field adapter and JSX handlers.
 - Add pinned reference parity, seeded search properties, packaging checks and CI.
 

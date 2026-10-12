@@ -23,16 +23,10 @@
 
 #  AST walker module for Mozilla Parser API compatible trees
 
-from dataclasses import dataclass
 from collections.abc import Mapping, Sequence
-from typing import Any, Protocol
 from types import SimpleNamespace
 from abc import get_cache_token
-
-
-class VisitorTable(Protocol):
-    """Indexed dispatch contract accepted by baseVisitor parameters."""
-    def __getitem__(self, kind: str): ...
+from reprlib import recursive_repr
 
 
 _MISSING = object()
@@ -68,7 +62,7 @@ def _attribute(node, name):
     return value
 
 
-def getField(node: object, name: str, default: Any = None) -> Any:
+def getField(node: object, name: str, default: object = None) -> object:
     """Read an ESTree field from a mapping or native node without copying it."""
     node_type = type(node)
     if node_type is SimpleNamespace:
@@ -132,7 +126,7 @@ def _position(value, name):
         raise ValueError(f"{name} must be nonnegative")
 
 
-def _base(baseVisitor: VisitorTable | None) -> VisitorTable:
+def _base(baseVisitor):
     return Base() if baseVisitor is None else baseVisitor
 
 
@@ -196,11 +190,47 @@ def makeTest(test):
     return test
 
 
-@dataclass(frozen=True)
 class Found:
     """A search match retaining the original node and state."""
-    node: object
-    state: object
+    __slots__ = ("node", "state", "__weakref__")
+
+    def __init__(self, node: object, state: object):
+        object.__setattr__(self, "node", node)
+        object.__setattr__(self, "state", state)
+
+    def __setattr__(self, name, value):
+        if type(self) is Found or name in ("node", "state"):
+            raise AttributeError(f"cannot assign to field {name!r}")
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name):
+        if type(self) is Found or name in ("node", "state"):
+            raise AttributeError(f"cannot delete field {name!r}")
+        object.__delattr__(self, name)
+
+    @recursive_repr()
+    def __repr__(self):
+        return f"{self.__class__.__qualname__}(node={self.node!r}, state={self.state!r})"
+
+    def __eq__(self, other):
+        if other.__class__ is self.__class__:
+            return (self.node, self.state) == (other.node, other.state)
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self.node, self.state))
+
+    def __reduce_ex__(self, protocol):
+        return (_restore_found, (type(self), self.node, self.state, getattr(self, "__dict__", None)))
+
+
+def _restore_found(cls, node, state, extras):
+    result = cls.__new__(cls)
+    object.__setattr__(result, "node", node)
+    object.__setattr__(result, "state", state)
+    if extras:
+        result.__dict__.update(extras)
+    return result
 
 
 class _Found(Exception):
