@@ -80,6 +80,37 @@ class InteroperabilityTests(unittest.TestCase):
         Mapping.register(Virtual)
         self.assertEqual(walk.getField(node, "type"), "MappingType")
 
+    def test_callback_mapping_registration_and_mapping_get_changes_are_observed(self):
+        expected_alternate = {"type": "EmptyStatement"}
+        class Native:
+            def __init__(self):
+                self.type = "IfStatement"
+                self.test = {"type": "Literal", "value": 1}
+                self.consequent = {"type": "EmptyStatement"}
+                self.alternate = None
+            def get(self, name, default=None):
+                if name == "alternate":
+                    return expected_alternate
+                return getattr(self, name, default)
+        node = Native()
+        seen = []
+        def register(child, state, kind):
+            seen.append(child)
+            if child is node.test:
+                Mapping.register(Native)
+        walk.full(node, register)
+        self.assertTrue(any(child is expected_alternate for child in seen))
+
+        mapping = UserDict(type="IfStatement", test=literal(),
+            consequent={"type": "EmptyStatement"}, alternate=None)
+        def replace_get(child, state, kind):
+            if child is mapping["test"]:
+                mapping.get = lambda name, default=None: (expected_alternate if name == "alternate"
+                    else mapping.data.get(name, default))
+        observed = []
+        walk.full(mapping, lambda child, state, kind: (replace_get(child, state, kind), observed.append(child)))
+        self.assertTrue(any(child is expected_alternate for child in observed))
+
     def test_class_proxy_mapping_and_native_descriptors(self):
         class Proxy:
             @property

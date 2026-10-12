@@ -149,6 +149,22 @@ class EngineTests(unittest.TestCase):
         finally:
             walk.Base.Literal = original
 
+    def test_full_category_delegation_preserves_custom_lookup_and_state(self):
+        for operation in (walk.full, walk.fullAncestor):
+            lookups, seen = [], []
+            class Custom(walk.Base):
+                def __getitem__(self, kind):
+                    lookups.append(kind)
+                    return super().__getitem__(kind)
+            node = Node(type="Literal", value=1)
+            state = []
+            operation(node, lambda node, passed_state, *args: seen.append((node, passed_state)),
+                Custom(), state, "Expression")
+            self.assertEqual(lookups, ["Expression", "Literal"])
+            self.assertEqual(len(seen), 1)
+            self.assertIs(seen[0][0], node)
+            self.assertIs(seen[0][1], state)
+
 
 if __name__ == "__main__":
     unittest.main()
