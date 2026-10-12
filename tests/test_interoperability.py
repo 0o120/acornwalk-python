@@ -51,6 +51,21 @@ class InteroperabilityTests(unittest.TestCase):
         self.assertEqual(walk.getField(native, "missing", ()), ())
         self.assertIsNone(walk.getField(native, "optional", False))
 
+    def test_unhashable_string_field_names_retain_native_and_custom_get_semantics(self):
+        class FieldName(str):
+            __hash__ = None
+        class Native:
+            def __getattribute__(self, name):
+                if name == "value":
+                    return 1
+                return object.__getattribute__(self, name)
+        class Custom(UserDict):
+            def get(self, name, default=None):
+                return 1 if name == "value" else default
+        name = FieldName("value")
+        self.assertEqual(walk.getField(Native(), name), 1)
+        self.assertEqual(walk.getField(Custom(), name), 1)
+
     def test_fast_access_preserves_custom_properties_and_mapping_get(self):
         class Namespace(SimpleNamespace):
             @property

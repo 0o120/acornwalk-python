@@ -69,7 +69,7 @@ def _attribute(node, name):
 def getField(node: object, name: str, default: object = None) -> object:
     """Read an ESTree field from a mapping or native node without copying it."""
     node_type = type(node)
-    if name not in _ALIASES:
+    if type(name) is str and name not in _ALIASES:
         if node_type is SimpleNamespace:
             return node.__dict__.get(name, default)
         if node_type is dict or _is_mapping(node, node_type):
