@@ -71,6 +71,8 @@ indices. With `esprima-fork`, request `range=True`. Missing/invalid positions
 raise `ValueError`. `nodeRange(node)` exposes this accessor. `getField(node,
 name, default=None)` reads mapping/attribute fields and native `isAsync`/`async_`
 and `allowAwait`/`await_` aliases. An explicit canonical mapping field takes precedence.
+Missing native fields honor the supplied default even for esprima's permissive
+attribute lookup; declared null fields retain `None`.
 
 Modern traversal covers object rest/spread, async functions/generators,
 for-await metadata, chains, private names, public/private fields, static blocks,

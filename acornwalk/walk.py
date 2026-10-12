@@ -37,6 +37,19 @@ _MISSING = object()
 _ALIASES = {"async": ("isAsync", "async_"), "await": ("allowAwait", "await_")}
 
 
+def _attribute(node, name):
+    value = getattr(node, name, _MISSING)
+    if value is None:
+        # esprima objects return None from __getattr__ for every absent field.
+        # Distinguish that fallback from a declared, intentionally null field.
+        namespace = getattr(node, "__dict__", None)
+        declared = isinstance(namespace, Mapping) and name in namespace
+        declared = declared or any(name in vars(cls) for cls in type(node).__mro__)
+        if not declared:
+            return _MISSING
+    return value
+
+
 def getField(node: object, name: str, default: Any = None) -> Any:
     """Read an ESTree field from a mapping or native node without copying it."""
     if isinstance(node, Mapping):
@@ -47,10 +60,10 @@ def getField(node: object, name: str, default: Any = None) -> Any:
                 if value is not _MISSING:
                     break
     else:
-        value = getattr(node, name, _MISSING)
+        value = _attribute(node, name)
         if (value is _MISSING or value is None) and name in _ALIASES:
             for alias in _ALIASES[name]:
-                candidate = getattr(node, alias, _MISSING)
+                candidate = _attribute(node, alias)
                 if candidate is not _MISSING and candidate is not None:
                     value = candidate
                     break

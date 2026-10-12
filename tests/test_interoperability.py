@@ -38,6 +38,17 @@ class InteroperabilityTests(unittest.TestCase):
             "type": "FunctionDeclaration", "params": [], "body": {"type": "BlockStatement", "body": []}}}
         walk.full(anonymous, lambda *args: None)
 
+    def test_defaults_for_permissive_native_nodes_preserve_declared_nulls(self):
+        class Native:
+            def __init__(self):
+                self.type = "Identifier"
+                self.optional = None
+            def __getattr__(self, name):
+                return None
+        native = Native()
+        self.assertEqual(walk.getField(native, "missing", ()), ())
+        self.assertIsNone(walk.getField(native, "optional", False))
+
     def test_position_validation(self):
         self.assertEqual(walk.nodeRange(SimpleNamespace(type="Identifier", range=[2, 4])), (2, 4))
         self.assertEqual(walk.nodeRange({"type": "Identifier", "start": 2, "end": 4}), (2, 4))
