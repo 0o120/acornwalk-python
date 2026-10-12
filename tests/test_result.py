@@ -13,6 +13,17 @@ class ResultTests(unittest.TestCase):
         self.assertIs(result.node, node)
         self.assertIs(result.state, state)
 
+    def test_positional_pattern_matching_and_field_annotations(self):
+        node, state = {}, []
+        match Found(node, state):
+            case Found(matched_node, matched_state):
+                self.assertIs(matched_node, node)
+                self.assertIs(matched_state, state)
+            case _:
+                self.fail("Found did not expose its positional fields")
+        self.assertEqual(Found.__match_args__, ("node", "state"))
+        self.assertEqual(Found.__annotations__, {"node": object, "state": object})
+
     def test_immutable_fields_and_exact_instance(self):
         result = Found("node", "state")
         for name in ("node", "state", "extra"):
@@ -59,6 +70,19 @@ class ResultTests(unittest.TestCase):
         restored = pickle.loads(pickle.dumps(result))
         self.assertEqual(restored, result)
         self.assertIs(weakref.ref(result)(), result)
+
+    def test_deepcopy_preserves_cyclic_state_and_node_identity(self):
+        state = []
+        result = Found({"type": "EmptyStatement"}, state)
+        state.append(result)
+        cloned = copy.deepcopy(result)
+        self.assertIs(cloned.state[0], cloned)
+        self.assertIsNot(cloned.node, result.node)
+        node = {"found": None}
+        original = Found(node, None)
+        node["found"] = original
+        cloned_node = copy.deepcopy(original)
+        self.assertIs(cloned_node.node["found"], cloned_node)
 
 
 if __name__ == "__main__":

@@ -193,6 +193,9 @@ def makeTest(test):
 class Found:
     """A search match retaining the original node and state."""
     __slots__ = ("node", "state", "__weakref__")
+    __match_args__ = ("node", "state")
+    node: object
+    state: object
 
     def __init__(self, node: object, state: object):
         object.__setattr__(self, "node", node)
@@ -222,6 +225,19 @@ class Found:
 
     def __reduce_ex__(self, protocol):
         return (_restore_found, (type(self), self.node, self.state, getattr(self, "__dict__", None)))
+
+    def __deepcopy__(self, memo):
+        # Memoize the empty result before visiting either field: node/state
+        # containers may point back to the Found object itself.
+        from copy import deepcopy
+        result = type(self).__new__(type(self))
+        memo[id(self)] = result
+        object.__setattr__(result, "node", deepcopy(self.node, memo))
+        object.__setattr__(result, "state", deepcopy(self.state, memo))
+        extras = getattr(self, "__dict__", None)
+        if extras:
+            result.__dict__.update(deepcopy(extras, memo))
+        return result
 
 
 def _restore_found(cls, node, state, extras):
