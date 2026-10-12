@@ -6,6 +6,16 @@ import weakref
 from acornwalk import Found
 
 
+class SlottedFound(Found):
+    __slots__ = ("extra", "__private")
+
+    def set_payload(self, payload):
+        self.extra = self.__private = payload
+
+    def private_payload(self):
+        return self.__private
+
+
 class ResultTests(unittest.TestCase):
     def test_fields_keep_original_identities(self):
         node, state = {}, []
@@ -83,6 +93,17 @@ class ResultTests(unittest.TestCase):
         node["found"] = original
         cloned_node = copy.deepcopy(original)
         self.assertIs(cloned_node.node["found"], cloned_node)
+
+    def test_slotted_subclasses_preserve_shared_and_cyclic_copy_state(self):
+        result = SlottedFound({}, None)
+        result.set_payload([result])
+        shallow = copy.copy(result)
+        self.assertIs(shallow.extra, result.extra)
+        self.assertIs(shallow.private_payload(), result.extra)
+        for cloned in (copy.deepcopy(result), pickle.loads(pickle.dumps(result))):
+            self.assertIs(cloned.extra[0], cloned)
+            self.assertIs(cloned.private_payload(), cloned.extra)
+            self.assertIsNot(cloned.extra, result.extra)
 
 
 if __name__ == "__main__":

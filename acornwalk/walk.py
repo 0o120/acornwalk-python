@@ -316,7 +316,8 @@ class Found:
         return hash((self.node, self.state))
 
     def __reduce_ex__(self, protocol):
-        return (_restore_found, (type(self), self.node, self.state, getattr(self, "__dict__", None)))
+        return (_restore_found, (type(self), self.node, self.state,
+            getattr(self, "__dict__", None), _found_slots(self)))
 
     def __deepcopy__(self, memo):
         # Memoize the empty result before visiting either field: node/state
@@ -329,15 +330,31 @@ class Found:
         extras = getattr(self, "__dict__", None)
         if extras:
             result.__dict__.update(deepcopy(extras, memo))
+        for name, value in _found_slots(self).items():
+            setattr(result, name, deepcopy(value, memo))
         return result
 
 
-def _restore_found(cls, node, state, extras):
+def _found_slots(result):
+    from types import MemberDescriptorType
+    slots = {}
+    for cls in type(result).__mro__:
+        for name, field in vars(cls).items():
+            if type(field) is MemberDescriptorType and name not in ("node", "state"):
+                value = getattr(result, name, _MISSING)
+                if value is not _MISSING:
+                    slots[name] = value
+    return slots
+
+
+def _restore_found(cls, node, state, extras, slots=None):
     result = cls.__new__(cls)
     object.__setattr__(result, "node", node)
     object.__setattr__(result, "state", state)
     if extras:
         result.__dict__.update(extras)
+    for name, value in (slots or {}).items():
+        setattr(result, name, value)
     return result
 
 
