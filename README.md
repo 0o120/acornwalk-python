@@ -93,3 +93,7 @@ and [implementation evidence](IMPLEMENTATION_STATUS.md). Core parity is pinned
 to [acorn-walk in acorn 8.15.0](https://github.com/acornjs/acorn/tree/8.15.0/acorn-walk).
 Python differences include `None` state handling, mappings/ranges, validated
 offsets, native aliases and the documented JSX extension.
+
+[Performance measurements](PERFORMANCE.md) compare the original, modern
+starting and current versions, including the old destructuring omission and
+remaining native validation cost.

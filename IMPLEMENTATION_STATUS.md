@@ -32,10 +32,12 @@ handlers; circular graphs and recursion beyond Python limits are unsupported.
 Optional Node differential tests explicitly skip if Node is absent. Shared
 parser/generator corpus acceptance is coordinated in the parent toolchain.
 
-Performance investigation: native traversal of the identical 91-node ES2017
-tree improved from 0.202 to 0.133 ms (mapping 0.120 ms). The old native-only
-implementation took 0.074 ms. Source-only uninstrumented startup fell from
-approximately 92 to 8.8 ms (old 5.2 ms) by removing eager typing/dataclass
-imports. Accessors and diagnostics retain a measured cost. The final raw
-evidence is in [performance.json](performance.json); timing and Python
-allocation are measured separately, with exact source hashes and revisions.
+Round-two full traversal takes 12–30% less time than the modern starting
+implementation across native/mapping/UserDict small and medium cases. The
+small native fixture is 0.0965 ms versus 0.1374 ms start and 0.0792 ms old.
+The old medium walker omits 576 callbacks and therefore performs less work.
+Validated native/protocol support retains an old-port latency gap; zero
+regressions are not claimed. [Performance evidence](PERFORMANCE.md) records
+old/start/current results, exact raw samples and the earlier separate
+startup/allocation investigation. Slotted Found subclasses preserve shallow,
+deep and pickle state, including shared/private slots and cyclic references.
