@@ -140,12 +140,26 @@ def _dispatch(visitor, kind):
     return handler
 
 
+def _default_dispatch(_visitor, kind):
+    # The default instance has no overrides. Resolve the class descriptor
+    # directly, preserving changes to Base during callbacks without another
+    # Python __getitem__ call for each category and concrete node.
+    try:
+        handler = getattr(Base, kind)
+    except AttributeError as exc:
+        raise ValueError(f"No walker for node type {kind!r}; provide a custom base visitor") from exc
+    if not callable(handler):
+        raise TypeError(f"Walker for node type {kind!r} must be callable")
+    return handler
+
+
 def simple(node, visitors, baseVisitor=None, state=None, override=None):
     """Call selected visitors after walking children (postorder)."""
     visitor = _base(baseVisitor)
+    dispatch = _default_dispatch if baseVisitor is None else _dispatch
     def c(node, st, override=None):
         kind = _kind(node, override)
-        _dispatch(visitor, kind)(node, st, c)
+        dispatch(visitor, kind)(node, st, c)
         found = visitors.get(kind)
         if found is not None:
             found(node, st)
@@ -155,6 +169,7 @@ def simple(node, visitors, baseVisitor=None, state=None, override=None):
 def ancestor(node, visitors, baseVisitor=None, state=None, override=None):
     """Like simple, with the current ancestor stack as a third argument."""
     visitor = _base(baseVisitor)
+    dispatch = _default_dispatch if baseVisitor is None else _dispatch
     ancestors = []
     def c(node, st, override=None):
         kind = _kind(node, override)
@@ -162,7 +177,7 @@ def ancestor(node, visitors, baseVisitor=None, state=None, override=None):
         if is_new:
             ancestors.append(node)
         try:
-            _dispatch(visitor, kind)(node, st, c)
+            dispatch(visitor, kind)(node, st, c)
             found = visitors.get(kind)
             if found is not None:
                 found(node, ancestors if st is None else st, ancestors)
@@ -257,11 +272,12 @@ class _Found(Exception):
 def full(node, callback, baseVisitor=None, state=None, override=None):
     """Call callback once per node after its semantic children."""
     visitor = _base(baseVisitor)
+    dispatch = _default_dispatch if baseVisitor is None else _dispatch
     last = None
     def c(node, st, override=None):
         nonlocal last
         kind = _kind(node, override)
-        _dispatch(visitor, kind)(node, st, c)
+        dispatch(visitor, kind)(node, st, c)
         if last is not node:
             callback(node, st, kind)
             last = node
@@ -271,6 +287,7 @@ def full(node, callback, baseVisitor=None, state=None, override=None):
 def fullAncestor(node, callback, baseVisitor=None, state=None, override=None):
     """A full walk with callback(node, state, ancestors, category)."""
     visitor = _base(baseVisitor)
+    dispatch = _default_dispatch if baseVisitor is None else _dispatch
     ancestors = []
     last = None
     def c(node, st, override=None):
@@ -280,7 +297,7 @@ def fullAncestor(node, callback, baseVisitor=None, state=None, override=None):
         if is_new:
             ancestors.append(node)
         try:
-            _dispatch(visitor, kind)(node, st, c)
+            dispatch(visitor, kind)(node, st, c)
             if last is not node:
                 callback(node, ancestors if st is None else st, ancestors, kind)
                 last = node
@@ -299,11 +316,12 @@ def findNodeAt(node: object, start: int | None, end: int | None, test=None, base
     if start is not None and end is not None and end < start:
         raise ValueError("end must not precede start")
     visitor, test = _base(baseVisitor), makeTest(test)
+    dispatch = _default_dispatch if baseVisitor is None else _dispatch
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
         kind = _kind(node, override)
         if (start is None or node_start <= start) and (end is None or node_end >= end):
-            _dispatch(visitor, kind)(node, st, c)
+            dispatch(visitor, kind)(node, st, c)
         if (start is None or node_start == start) and (end is None or node_end == end) and test(kind, node):
             raise _Found(node, st)
     try:
@@ -317,12 +335,13 @@ def findNodeAround(node: object, pos: int, test=None, baseVisitor=None, state=No
     """Find the innermost match containing pos, including end boundaries."""
     _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
+    dispatch = _default_dispatch if baseVisitor is None else _dispatch
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
         kind = _kind(node, override)
         if node_start > pos or node_end < pos:
             return
-        _dispatch(visitor, kind)(node, st, c)
+        dispatch(visitor, kind)(node, st, c)
         if test(kind, node):
             raise _Found(node, st)
     try:
@@ -336,6 +355,7 @@ def findNodeAfter(node: object, pos: int, test=None, baseVisitor=None, state=Non
     """Find the first outermost match starting at or after pos."""
     _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
+    dispatch = _default_dispatch if baseVisitor is None else _dispatch
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
         if node_end < pos:
@@ -343,7 +363,7 @@ def findNodeAfter(node: object, pos: int, test=None, baseVisitor=None, state=Non
         kind = _kind(node, override)
         if node_start >= pos and test(kind, node):
             raise _Found(node, st)
-        _dispatch(visitor, kind)(node, st, c)
+        dispatch(visitor, kind)(node, st, c)
     try:
         c(node, state)
     except _Found as found:
@@ -355,6 +375,7 @@ def findNodeBefore(node: object, pos: int, test=None, baseVisitor=None, state=No
     """Find the closest preceding match; ties favor the outer node."""
     _position(pos, "pos")
     visitor, test = _base(baseVisitor), makeTest(test)
+    dispatch = _default_dispatch if baseVisitor is None else _dispatch
     best = None
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
@@ -364,7 +385,7 @@ def findNodeBefore(node: object, pos: int, test=None, baseVisitor=None, state=No
         kind = _kind(node, override)
         if node_end <= pos and (best is None or nodeRange(best.node)[1] < node_end) and test(kind, node):
             best = Found(node, st)
-        _dispatch(visitor, kind)(node, st, c)
+        dispatch(visitor, kind)(node, st, c)
     c(node, state)
     return best
 
@@ -413,11 +434,9 @@ class Base:
         for stmt in getField(node, "body"):
             c(stmt, st, "Statement")
 
-    def Statement(node, st, c):
-        return skipThrough(node, st, c)
+    Statement = skipThrough
         
-    def EmptyStatement(node, st, c):
-        return ignore(node, st, c)
+    EmptyStatement = ignore
 
     def ExpressionStatement(node, st, c):
         return c(getField(node, "expression"), st, "Expression")
@@ -437,11 +456,9 @@ class Base:
     def LabeledStatement(node, st, c):
         return c(getField(node, "body"), st, "Statement")
     
-    def BreakStatement(node, st, c):
-        return ignore(node, st, c)
+    BreakStatement = ignore
     
-    def ContinueStatement(node, st, c):
-        return ignore(node, st, c)
+    ContinueStatement = ignore
     
     def WithStatement(node, st, c):
         c(getField(node, "object"), st, "Expression")
@@ -522,8 +539,7 @@ class Base:
         else:
             c(node, st, "Expression")
 
-    def DebuggerStatement(node, st, c):
-        return ignore(node, st, c)
+    DebuggerStatement = ignore
 
     def FunctionDeclaration(node, st, c):
         return c(node, st, "Function")
@@ -552,11 +568,9 @@ class Base:
         else:
             c(node, st)
 
-    def VariablePattern(node, st, c):
-        return ignore(node, st, c)
+    VariablePattern = ignore
 
-    def MemberPattern(node, st, c):
-        return skipThrough(node, st, c)
+    MemberPattern = skipThrough
 
     def RestElement(node, st, c):
         return c(getField(node, "argument"), st, "Pattern")
@@ -575,17 +589,13 @@ class Base:
             elif getField(prop, "type") == "RestElement":
                 c(getField(prop, "argument"), st, "Pattern")
 
-    def Expression(node, st, c):
-        return skipThrough(node, st, c)
+    Expression = skipThrough
 
-    def ThisExpression(node, st, c):
-        return ignore(node, st, c)
+    ThisExpression = ignore
 
-    def Super(node, st, c):
-        return ignore(node, st, c)
+    Super = ignore
 
-    def MetaProperty(node, st, c):
-        return ignore(node, st, c)
+    MetaProperty = ignore
 
     def ArrayExpression(node, st, c):
         for elt in getField(node, "elements"):
@@ -612,8 +622,7 @@ class Base:
         for expr in getField(node, "expressions"):
             c(expr, st, "Expression")
 
-    def TemplateElement(node, st, c):
-        return ignore(node, st, c)
+    TemplateElement = ignore
 
     def UnaryExpression(node, st, c):
         c(getField(node, "argument"), st, "Expression")
@@ -696,23 +705,17 @@ class Base:
         if getField(node, "options") is not None:
             c(getField(node, "options"), st, "Expression")
 
-    def ImportSpecifier(node, st, c):
-        return ignore(node, st, c)
+    ImportSpecifier = ignore
 
-    def ImportDefaultSpecifier(node, st, c):
-        return ignore(node, st, c)
+    ImportDefaultSpecifier = ignore
 
-    def ImportNamespaceSpecifier(node, st, c):
-        return ignore(node, st, c)
+    ImportNamespaceSpecifier = ignore
 
-    def Identifier(node, st, c):
-        return ignore(node, st, c)
+    Identifier = ignore
 
-    def PrivateIdentifier(node, st, c):
-        return ignore(node, st, c)
+    PrivateIdentifier = ignore
 
-    def Literal(node, st, c):
-        return ignore(node, st, c)
+    Literal = ignore
 
     def TaggedTemplateExpression(node, st, c):
         c(getField(node, "tag"), st, "Expression")

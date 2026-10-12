@@ -128,6 +128,27 @@ class EngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "UnknownThing"):
             walk.simple(Node(type="UnknownThing"), {})
 
+    def test_default_dispatch_observes_class_descriptors_and_callback_changes(self):
+        original = walk.Base.Literal
+        seen = []
+        class Handler:
+            def __get__(self, instance, owner):
+                return lambda node, state, recurse: seen.append(node)
+        try:
+            walk.Base.Literal = Handler()
+            root, _, left, right = tree()
+            walk.full(root, lambda *args: None)
+            self.assertEqual(seen, [left, right])
+            walk.Base.Literal = original
+            def replace(node, state, kind):
+                if node is left:
+                    walk.Base.Literal = lambda node, state, recurse: seen.append(node)
+            seen.clear()
+            walk.full(root, replace)
+            self.assertEqual(seen, [right])
+        finally:
+            walk.Base.Literal = original
+
 
 if __name__ == "__main__":
     unittest.main()
