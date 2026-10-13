@@ -39,3 +39,8 @@ separate uninstrumented startup and allocation measurements. It removed eager
 typing/dataclass imports, reducing source-only import from about 92 to 8.8 ms;
 the original import was about 5.2 ms. Those samples predate this round and are
 not relabeled as measurements of the latest source.
+
+Archived measurements use `<workspace>/` for the original checkout root;
+machine-specific absolute paths have been removed. Timing samples, source
+hashes and callback counts retain their recorded values; error diagnostics
+use the same portable path marker.

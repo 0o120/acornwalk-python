@@ -53,7 +53,7 @@ def main():
         metadata = email.message_from_bytes(archive.extractfile(f"{prefix}/PKG-INFO").read())
         assert metadata["Version"] == version
         for name in ["README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE",
-                     "IMPLEMENTATION_STATUS.md", "PERFORMANCE.md"]:
+                     "RELEASING.md", "PERFORMANCE.md"]:
             assert f"{prefix}/{name}" in archive.getnames(), f"Missing source-archive documentation: {name}"
     print("Source archive, wheel metadata, clean imports and README examples verified")
 

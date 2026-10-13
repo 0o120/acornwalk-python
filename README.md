@@ -96,7 +96,7 @@ support for proposals. Circular graphs and excessive recursion depth are outside
 the AST contract.
 
 See [contributor instructions](https://github.com/0o120/acornwalk-python/blob/master/CONTRIBUTING.md)
-and [implementation evidence](https://github.com/0o120/acornwalk-python/blob/master/IMPLEMENTATION_STATUS.md).
+and [CI results](https://github.com/0o120/acornwalk-python/actions).
 Core parity is pinned
 to [acorn-walk in acorn 8.15.0](https://github.com/acornjs/acorn/tree/8.15.0/acorn-walk).
 Python differences include `None` state handling, mappings/ranges, validated

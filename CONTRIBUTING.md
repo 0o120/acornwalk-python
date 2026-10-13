@@ -16,6 +16,12 @@ are explicitly skipped. Node is not needed at runtime. Each concrete core node
 handler needs a fixture; JSX handlers need focused expression/metadata tests.
 Search changes must preserve query order, state and node identity.
 
+Reference tests compare callback order and every search API with checksum-pinned
+acorn-walk/acorn 8.15.0. Protocol regressions cover mapping methods, native
+descriptors, callback-time registration changes and missing versus null fields.
+`Found` tests cover immutability, copying, pickling, weak references and subclass
+state. CI runs Python 3.11–3.15 on Linux and Windows, plus macOS 3.11 and 3.15.
+
 The build command creates a source archive and builds its wheel from that archive.
 The distribution checker validates metadata, imports from a clean extracted
 wheel and runs the Python README examples outside the source checkout. Commit
