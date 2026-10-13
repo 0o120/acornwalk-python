@@ -1,0 +1,933 @@
+{
+  "python": "3.12.0 (tags/v3.12.0:0fb18b0, Oct  2 2023, 13:03:39) [MSC v.1935 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "method": {
+    "timing": "Seven uninstrumented warm batches per isolated worker; parsing/conversion/import/GC collection outside timed samples. Original and modern starting sources are exact clean Git snapshots. No JavaScript execution.",
+    "parity": "Old walk results with differing callback counts are marked incomparable; modern-start/current counts must match. Old astral classifications are wrong and are explicitly recorded.",
+    "representations": "native=identical SimpleNamespace tree; parserNative=AST directly parsed by frozen modern parser; mapping=plain dictionaries; customMapping=UserDict for every node; customVisitor=Base subclass overriding table lookup."
+  },
+  "snapshots": {
+    "original": {
+      "revision": "0f8e69a014fd3b6e5706dc8f3a52a25ca084f614",
+      "files": {
+        "acornwalk/__init__.py": "af7a0552934ee1210cde9a1937cb4c3712127d2dcec0653eb8241dda4ee67445",
+        "acornwalk/walk.py": "62b257b4f82c278fecaa7ca96adb1817ab968866ee4b2bba5136d47a43122e2a"
+      }
+    },
+    "modernStart": {
+      "revision": "0f5d34ed961d93b0de758ea0d8f5518410a3516d",
+      "files": {
+        "acornwalk/__init__.py": "e9b02c03c607277911761a8fce9312c8241e7439435305da9306360619ff4304",
+        "acornwalk/_version.py": "ffb3a541d6d590ae2369dd022dda48d20ad3fb31006feaa01661f9985cc35e20",
+        "acornwalk/py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "acornwalk/walk.py": "19e4f20e67e4e8df80d539fa2f89ff7bb4739266774f3020c18508737cba50c5",
+        "acornwalk/walk.pyi": "4dd322415432d2cb6cb2bf02c09a951a6152d2eaca29413fa9bc6551541c102e"
+      }
+    }
+  },
+  "measuredCurrent": {
+    "revision": "f5b1f512848afb3b0a2cb7aa7ce495a708a199a8",
+    "workingTreeStatus": "",
+    "sourceSha256": {
+      "acornwalk\\__init__.py": "e9b02c03c607277911761a8fce9312c8241e7439435305da9306360619ff4304",
+      "acornwalk\\_version.py": "ffb3a541d6d590ae2369dd022dda48d20ad3fb31006feaa01661f9985cc35e20",
+      "acornwalk\\walk.py": "0d48a9ce2606d8e698d28f4e11ac6e585eba200e8b26288a4cf6b5a5fdeba0d7"
+    }
+  },
+  "finalRuntimeRevision": "82257ffe295f45806502ef651ff70f92fe4bebef",
+  "results": [
+    {
+      "size": "small",
+      "operation": "full",
+      "representation": "native",
+      "results": {
+        "original": {
+          "callbacks": 91,
+          "medianSeconds": 7.915599970147014e-05,
+          "samplesSeconds": [
+            7.792700082063675e-05,
+            9.361100033856928e-05,
+            9.170499979518353e-05,
+            7.95630004722625e-05,
+            7.833499927073717e-05,
+            7.656599977053702e-05,
+            7.915599970147014e-05
+          ]
+        },
+        "modernStart": {
+          "callbacks": 91,
+          "medianSeconds": 0.00013742799987085164,
+          "samplesSeconds": [
+            0.00014851599931716919,
+            0.00013562800013460218,
+            0.00013829599949531258,
+            0.0001343940000515431,
+            0.00015094300033524632,
+            0.00013742799987085164,
+            0.0001347400003578514
+          ]
+        },
+        "current": {
+          "callbacks": 91,
+          "medianSeconds": 9.646299993619323e-05,
+          "samplesSeconds": [
+            9.613800095394254e-05,
+            9.646299993619323e-05,
+            0.00010119099984876811,
+            9.770700009539723e-05,
+            9.463599999435247e-05,
+            0.00010165199986658991,
+            9.420500020496548e-05
+          ]
+        }
+      },
+      "currentToModernStart": 0.7019166401813649,
+      "originalCallbackParity": true,
+      "currentToOriginal": 1.2186442000605755
+    },
+    {
+      "size": "small",
+      "operation": "full",
+      "representation": "parserNative",
+      "results": {
+        "original": {
+          "callbacks": 91,
+          "medianSeconds": 7.251499919220805e-05,
+          "samplesSeconds": [
+            7.251499919220805e-05,
+            7.47459998819977e-05,
+            6.984099978581071e-05,
+            7.109900005161762e-05,
+            7.277299999259413e-05,
+            7.369700004346669e-05,
+            7.107399986125529e-05
+          ]
+        },
+        "modernStart": {
+          "callbacks": 91,
+          "medianSeconds": 0.000221218999940902,
+          "samplesSeconds": [
+            0.00022203800035640596,
+            0.00022846000036224722,
+            0.00021804100018925964,
+            0.000221218999940902,
+            0.00021454100031405686,
+            0.00022457299986854194,
+            0.00021880999905988575
+          ]
+        },
+        "current": {
+          "callbacks": 91,
+          "medianSeconds": 0.0001597459998447448,
+          "samplesSeconds": [
+            0.0001631249999627471,
+            0.00015929099987260998,
+            0.0001618530007544905,
+            0.00015517499996349217,
+            0.0001597459998447448,
+            0.00016191900009289385,
+            0.00015925599960610272
+          ]
+        }
+      },
+      "currentToModernStart": 0.7221169966748808,
+      "originalCallbackParity": true,
+      "currentToOriginal": 2.202937345711368
+    },
+    {
+      "size": "small",
+      "operation": "full",
+      "representation": "mapping",
+      "results": {
+        "original": {
+          "error": "Traceback (most recent call last):\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 43, in <module>\n    operation();node_count=count;count=0\n    ^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 42, in <lambda>\n    else:operation=lambda:walk.full(tree,callback)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 113, in full\n    c(node, state, override)\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 108, in c\n    _type = override or node.type\n                        ^^^^^^^^^\nAttributeError: 'dict' object has no attribute 'type'\n",
+          "exitCode": 1
+        },
+        "modernStart": {
+          "callbacks": 91,
+          "medianSeconds": 0.00012789800064638257,
+          "samplesSeconds": [
+            0.00013651399989612401,
+            0.00013021200080402196,
+            0.00012588200042955576,
+            0.00012510099913924931,
+            0.00012858099886216225,
+            0.00012513899942860008,
+            0.00012789800064638257
+          ]
+        },
+        "current": {
+          "callbacks": 91,
+          "medianSeconds": 9.441899950616062e-05,
+          "samplesSeconds": [
+            9.446200099773705e-05,
+            8.930000010877848e-05,
+            9.441899950616062e-05,
+            8.960299892351032e-05,
+            9.484799928031862e-05,
+            9.27929999306798e-05,
+            9.495000005699695e-05
+          ]
+        }
+      },
+      "currentToModernStart": 0.7382367122939942
+    },
+    {
+      "size": "small",
+      "operation": "full",
+      "representation": "customMapping",
+      "results": {
+        "original": {
+          "error": "Traceback (most recent call last):\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 43, in <module>\n    operation();node_count=count;count=0\n    ^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 42, in <lambda>\n    else:operation=lambda:walk.full(tree,callback)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 113, in full\n    c(node, state, override)\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 108, in c\n    _type = override or node.type\n                        ^^^^^^^^^\nAttributeError: 'UserDict' object has no attribute 'type'\n",
+          "exitCode": 1
+        },
+        "modernStart": {
+          "callbacks": 91,
+          "medianSeconds": 0.00021894199890084564,
+          "samplesSeconds": [
+            0.00023543099989183246,
+            0.00021485800039954483,
+            0.0002282170008402318,
+            0.00022199500002898276,
+            0.00021453800029121338,
+            0.00021894199890084564,
+            0.00021383399958722294
+          ]
+        },
+        "current": {
+          "callbacks": 91,
+          "medianSeconds": 0.0001835989998653531,
+          "samplesSeconds": [
+            0.0001835989998653531,
+            0.0001897769991774112,
+            0.00017971800058148803,
+            0.00017982900026254357,
+            0.0001804450002964586,
+            0.0001880040008109063,
+            0.00018989999894984067
+          ]
+        }
+      },
+      "currentToModernStart": 0.8385736897766305
+    },
+    {
+      "size": "small",
+      "operation": "simple",
+      "representation": "native",
+      "results": {
+        "original": {
+          "callbacks": 19,
+          "medianSeconds": 6.431999965570867e-05,
+          "samplesSeconds": [
+            6.790600018575787e-05,
+            6.395300035364925e-05,
+            6.634099991060793e-05,
+            6.834300002083183e-05,
+            6.30120001733303e-05,
+            6.431999965570867e-05,
+            6.400199956260621e-05
+          ]
+        },
+        "modernStart": {
+          "callbacks": 19,
+          "medianSeconds": 0.00013266999972984196,
+          "samplesSeconds": [
+            0.00014860199997201561,
+            0.00012988600065000355,
+            0.00013521400047466158,
+            0.00012933999998494982,
+            0.00013332400005310773,
+            0.00012899300083518028,
+            0.00013266999972984196
+          ]
+        },
+        "current": {
+          "callbacks": 19,
+          "medianSeconds": 9.531899937428534e-05,
+          "samplesSeconds": [
+            9.84680000692606e-05,
+            9.513699915260076e-05,
+            9.47350007481873e-05,
+            9.531899937428534e-05,
+            9.867300046607852e-05,
+            9.424200048670173e-05,
+            9.823700063861907e-05
+          ]
+        }
+      },
+      "currentToModernStart": 0.7184668694383428,
+      "originalCallbackParity": true,
+      "currentToOriginal": 1.4819496250700832
+    },
+    {
+      "size": "small",
+      "operation": "simple",
+      "representation": "parserNative",
+      "results": {
+        "original": {
+          "callbacks": 19,
+          "medianSeconds": 6.711399997584522e-05,
+          "samplesSeconds": [
+            7.11020000744611e-05,
+            7.050000014714897e-05,
+            6.676799966953695e-05,
+            6.66999991517514e-05,
+            6.933899945579469e-05,
+            6.711399997584522e-05,
+            6.66409998666495e-05
+          ]
+        },
+        "modernStart": {
+          "callbacks": 19,
+          "medianSeconds": 0.0002131169999483973,
+          "samplesSeconds": [
+            0.00021093899966217577,
+            0.00021326199988834559,
+            0.0002247440000064671,
+            0.00020963500021025538,
+            0.0002131169999483973,
+            0.00020944600109942257,
+            0.0002163560001645237
+          ]
+        },
+        "current": {
+          "callbacks": 19,
+          "medianSeconds": 0.00015416800044476986,
+          "samplesSeconds": [
+            0.0001537020003888756,
+            0.00014994399971328675,
+            0.00014986000023782254,
+            0.00015416800044476986,
+            0.00016820200020447373,
+            0.00015630300040356815,
+            0.00017086499952711164
+          ]
+        }
+      },
+      "currentToModernStart": 0.7233960710881772,
+      "originalCallbackParity": true,
+      "currentToOriginal": 2.297106423402807
+    },
+    {
+      "size": "small",
+      "operation": "simple",
+      "representation": "mapping",
+      "results": {
+        "original": {
+          "error": "Traceback (most recent call last):\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 43, in <module>\n    operation();node_count=count;count=0\n    ^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 41, in <lambda>\n    elif action == 'simple':operation=lambda:walk.simple(tree,{'Literal':callback,'Identifier':callback})\n                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 50, in simple\n    c(node, state, override)\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 45, in c\n    _type = override or node.type\n                        ^^^^^^^^^\nAttributeError: 'dict' object has no attribute 'type'\n",
+          "exitCode": 1
+        },
+        "modernStart": {
+          "callbacks": 19,
+          "medianSeconds": 0.00012283199932426215,
+          "samplesSeconds": [
+            0.00012283199932426215,
+            0.00013179500005207955,
+            0.00012572400039061903,
+            0.00012268400052562356,
+            0.0001235650002490729,
+            0.00012187600019387901,
+            0.0001214330003131181
+          ]
+        },
+        "current": {
+          "callbacks": 19,
+          "medianSeconds": 8.74320010188967e-05,
+          "samplesSeconds": [
+            8.925000089220703e-05,
+            9.379900060594082e-05,
+            9.612199966795742e-05,
+            8.644100045785308e-05,
+            8.74320010188967e-05,
+            8.53849994018674e-05,
+            8.565600030124187e-05
+          ]
+        }
+      },
+      "currentToModernStart": 0.7118014971659495
+    },
+    {
+      "size": "small",
+      "operation": "customVisitor",
+      "representation": "native",
+      "results": {
+        "original": {
+          "callbacks": 91,
+          "medianSeconds": 8.84949997998774e-05,
+          "samplesSeconds": [
+            9.007200016640126e-05,
+            9.759900043718517e-05,
+            8.84949997998774e-05,
+            8.777200011536479e-05,
+            8.912299992516637e-05,
+            8.811600040644408e-05,
+            8.693299954757095e-05
+          ]
+        },
+        "modernStart": {
+          "callbacks": 91,
+          "medianSeconds": 0.0001514189993031323,
+          "samplesSeconds": [
+            0.00016642300062812864,
+            0.00015059299999848008,
+            0.00015385500038973986,
+            0.00014868799946270882,
+            0.00015460000024177133,
+            0.00014829300111159682,
+            0.0001514189993031323
+          ]
+        },
+        "current": {
+          "callbacks": 91,
+          "medianSeconds": 0.00013101300108246506,
+          "samplesSeconds": [
+            0.00013027200009673833,
+            0.0001310470001772046,
+            0.00013101300108246506,
+            0.00012884599971584975,
+            0.00013687400030903518,
+            0.00013074000016786159,
+            0.0001325600000564009
+          ]
+        }
+      },
+      "currentToModernStart": 0.8652348891844439,
+      "originalCallbackParity": true,
+      "currentToOriginal": 1.4804565385472384
+    },
+    {
+      "size": "small",
+      "operation": "customVisitor",
+      "representation": "parserNative",
+      "results": {
+        "original": {
+          "callbacks": 91,
+          "medianSeconds": 8.321499917656184e-05,
+          "samplesSeconds": [
+            9.161100024357438e-05,
+            8.258699905127287e-05,
+            8.321499917656184e-05,
+            8.473700028844178e-05,
+            8.235699962824583e-05,
+            8.07940005324781e-05,
+            8.402299950830638e-05
+          ]
+        },
+        "modernStart": {
+          "callbacks": 91,
+          "medianSeconds": 0.0002319920004811138,
+          "samplesSeconds": [
+            0.00024135099956765771,
+            0.00022715000086463987,
+            0.00023410200024954976,
+            0.00023094199947081505,
+            0.00023002799949608743,
+            0.0002319920004811138,
+            0.0002324220002628863
+          ]
+        },
+        "current": {
+          "callbacks": 91,
+          "medianSeconds": 0.00019072999944910407,
+          "samplesSeconds": [
+            0.00018788899993523955,
+            0.00019223700044676662,
+            0.00019155199988745152,
+            0.00018267499981448055,
+            0.00020293899928219616,
+            0.00018705799942836165,
+            0.00019072999944910407
+          ]
+        }
+      },
+      "currentToModernStart": 0.8221404145555061,
+      "originalCallbackParity": true,
+      "currentToOriginal": 2.2920146768784044
+    },
+    {
+      "size": "small",
+      "operation": "customVisitor",
+      "representation": "mapping",
+      "results": {
+        "original": {
+          "error": "Traceback (most recent call last):\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 43, in <module>\n    operation();node_count=count;count=0\n    ^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 40, in <lambda>\n    operation=lambda:walk.full(tree,callback,Custom())\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 113, in full\n    c(node, state, override)\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 108, in c\n    _type = override or node.type\n                        ^^^^^^^^^\nAttributeError: 'dict' object has no attribute 'type'\n",
+          "exitCode": 1
+        },
+        "modernStart": {
+          "callbacks": 91,
+          "medianSeconds": 0.00013946700026281177,
+          "samplesSeconds": [
+            0.00014062699978239834,
+            0.00014551799977198244,
+            0.00013788799988105892,
+            0.00014062299975194038,
+            0.000138459000736475,
+            0.00013946700026281177,
+            0.00013504000031389296
+          ]
+        },
+        "current": {
+          "callbacks": 91,
+          "medianSeconds": 0.00012874700012616814,
+          "samplesSeconds": [
+            0.000134412000188604,
+            0.0001400890003424138,
+            0.00012874700012616814,
+            0.00012172999908216297,
+            0.0001191060000564903,
+            0.00013266100082546473,
+            0.00012071900069713592
+          ]
+        }
+      },
+      "currentToModernStart": 0.9231359381327278
+    },
+    {
+      "size": "medium",
+      "operation": "full",
+      "representation": "native",
+      "results": {
+        "original": {
+          "callbacks": 5913,
+          "medianSeconds": 0.005626860004849732,
+          "samplesSeconds": [
+            0.005536919995211065,
+            0.005646639992482961,
+            0.005626860004849732,
+            0.005532719986513257,
+            0.005805400013923645,
+            0.005594800016842783,
+            0.0057464000070467595
+          ]
+        },
+        "modernStart": {
+          "callbacks": 6489,
+          "medianSeconds": 0.01032954000402242,
+          "samplesSeconds": [
+            0.010117939999327063,
+            0.010558800003491343,
+            0.01032954000402242,
+            0.010701019992120564,
+            0.01022743999492377,
+            0.010451840003952384,
+            0.01028124000877142
+          ]
+        },
+        "current": {
+          "callbacks": 6489,
+          "medianSeconds": 0.00800246000289917,
+          "samplesSeconds": [
+            0.007730600005015731,
+            0.00800246000289917,
+            0.00819567998405546,
+            0.007966320007108152,
+            0.008406220003962517,
+            0.008057500002905726,
+            0.00785988001152873
+          ]
+        }
+      },
+      "currentToModernStart": 0.7747160086299039,
+      "originalCallbackParity": false,
+      "currentToOriginal": 1.4221892842547945
+    },
+    {
+      "size": "medium",
+      "operation": "full",
+      "representation": "parserNative",
+      "results": {
+        "original": {
+          "callbacks": 5913,
+          "medianSeconds": 0.005075119994580745,
+          "samplesSeconds": [
+            0.004863819992169738,
+            0.004932620003819466,
+            0.004800740000791848,
+            0.006493379990570247,
+            0.005075119994580745,
+            0.005486600007861853,
+            0.005402019992470741
+          ]
+        },
+        "modernStart": {
+          "callbacks": 6489,
+          "medianSeconds": 0.016129479999653994,
+          "samplesSeconds": [
+            0.015299879992380739,
+            0.01579146001022309,
+            0.016352760000154377,
+            0.016633559996262193,
+            0.016129479999653994,
+            0.016826700000092388,
+            0.015909639978781344
+          ]
+        },
+        "current": {
+          "callbacks": 6489,
+          "medianSeconds": 0.012174939992837608,
+          "samplesSeconds": [
+            0.011763240001164377,
+            0.012530720001086593,
+            0.012174939992837608,
+            0.012062199995853007,
+            0.012212820001877844,
+            0.012505739997141063,
+            0.012009420013055206
+          ]
+        }
+      },
+      "currentToModernStart": 0.7548253256210853,
+      "originalCallbackParity": false,
+      "currentToOriginal": 2.398946232963577
+    },
+    {
+      "size": "medium",
+      "operation": "full",
+      "representation": "mapping",
+      "results": {
+        "original": {
+          "error": "Traceback (most recent call last):\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 43, in <module>\n    operation();node_count=count;count=0\n    ^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 42, in <lambda>\n    else:operation=lambda:walk.full(tree,callback)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 113, in full\n    c(node, state, override)\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 108, in c\n    _type = override or node.type\n                        ^^^^^^^^^\nAttributeError: 'dict' object has no attribute 'type'\n",
+          "exitCode": 1
+        },
+        "modernStart": {
+          "callbacks": 6489,
+          "medianSeconds": 0.009960380010306835,
+          "samplesSeconds": [
+            0.010032420000061392,
+            0.009960380010306835,
+            0.010233099991455673,
+            0.009781259996816515,
+            0.010058979992754758,
+            0.009859780012629927,
+            0.00948785999789834
+          ]
+        },
+        "current": {
+          "callbacks": 6489,
+          "medianSeconds": 0.008606459992006422,
+          "samplesSeconds": [
+            0.009495920012705028,
+            0.009568340005353093,
+            0.009637619997374714,
+            0.008606459992006422,
+            0.007497560000047088,
+            0.007549099996685982,
+            0.008333420008420944
+          ]
+        }
+      },
+      "currentToModernStart": 0.8640694414370336
+    },
+    {
+      "size": "medium",
+      "operation": "full",
+      "representation": "customMapping",
+      "results": {
+        "original": {
+          "error": "Traceback (most recent call last):\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 43, in <module>\n    operation();node_count=count;count=0\n    ^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 42, in <lambda>\n    else:operation=lambda:walk.full(tree,callback)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 113, in full\n    c(node, state, override)\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 108, in c\n    _type = override or node.type\n                        ^^^^^^^^^\nAttributeError: 'UserDict' object has no attribute 'type'\n",
+          "exitCode": 1
+        },
+        "modernStart": {
+          "callbacks": 6489,
+          "medianSeconds": 0.01696663999464363,
+          "samplesSeconds": [
+            0.017086579999886452,
+            0.017065400001592936,
+            0.016402940009720625,
+            0.01696663999464363,
+            0.017015519994311036,
+            0.01661801999434829,
+            0.01664911999832839
+          ]
+        },
+        "current": {
+          "callbacks": 6489,
+          "medianSeconds": 0.014951799996197224,
+          "samplesSeconds": [
+            0.014951799996197224,
+            0.01436515999957919,
+            0.015407960000447928,
+            0.014548840001225471,
+            0.014258639980107546,
+            0.015026040002703666,
+            0.015923419990576802
+          ]
+        }
+      },
+      "currentToModernStart": 0.8812469646858487
+    },
+    {
+      "size": "medium",
+      "operation": "simple",
+      "representation": "native",
+      "results": {
+        "original": {
+          "callbacks": 1352,
+          "medianSeconds": 0.004978520004078746,
+          "samplesSeconds": [
+            0.005009140004403889,
+            0.0054373200051486496,
+            0.004978520004078746,
+            0.004514379985630512,
+            0.005169699992984533,
+            0.004647479997947812,
+            0.004826680012047291
+          ]
+        },
+        "modernStart": {
+          "callbacks": 1544,
+          "medianSeconds": 0.010341320000588895,
+          "samplesSeconds": [
+            0.010231039999052883,
+            0.010962559981271625,
+            0.010807079984806478,
+            0.010035520000383259,
+            0.010341320000588895,
+            0.011268460005521775,
+            0.009939240012317895
+          ]
+        },
+        "current": {
+          "callbacks": 1544,
+          "medianSeconds": 0.008031739993020892,
+          "samplesSeconds": [
+            0.008244679984636604,
+            0.007728619989939034,
+            0.008149180002510548,
+            0.00804701999295503,
+            0.007946859998628496,
+            0.008031739993020892,
+            0.007800320000387728
+          ]
+        }
+      },
+      "currentToModernStart": 0.7766648737843447,
+      "originalCallbackParity": false,
+      "currentToOriginal": 1.6132786423356216
+    },
+    {
+      "size": "medium",
+      "operation": "simple",
+      "representation": "parserNative",
+      "results": {
+        "original": {
+          "callbacks": 1352,
+          "medianSeconds": 0.004512179992161691,
+          "samplesSeconds": [
+            0.004512179992161691,
+            0.00484172001015395,
+            0.004528560000471771,
+            0.004433559998869896,
+            0.00408956001047045,
+            0.0045751799829304215,
+            0.004474680009298027
+          ]
+        },
+        "modernStart": {
+          "callbacks": 1544,
+          "medianSeconds": 0.016137679992243647,
+          "samplesSeconds": [
+            0.015688739996403456,
+            0.016382139991037548,
+            0.01593725997954607,
+            0.016091300011612474,
+            0.016137679992243647,
+            0.016288439999334513,
+            0.01628284000325948
+          ]
+        },
+        "current": {
+          "callbacks": 1544,
+          "medianSeconds": 0.012003280012868345,
+          "samplesSeconds": [
+            0.01195288000162691,
+            0.012147459993138909,
+            0.012225519982166588,
+            0.013235620013438166,
+            0.012003280012868345,
+            0.011730000004172325,
+            0.011518640001304448
+          ]
+        }
+      },
+      "currentToModernStart": 0.7438045629010834,
+      "originalCallbackParity": false,
+      "currentToOriginal": 2.6601953011005275
+    },
+    {
+      "size": "medium",
+      "operation": "simple",
+      "representation": "mapping",
+      "results": {
+        "original": {
+          "error": "Traceback (most recent call last):\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 43, in <module>\n    operation();node_count=count;count=0\n    ^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 41, in <lambda>\n    elif action == 'simple':operation=lambda:walk.simple(tree,{'Literal':callback,'Identifier':callback})\n                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 50, in simple\n    c(node, state, override)\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 45, in c\n    _type = override or node.type\n                        ^^^^^^^^^\nAttributeError: 'dict' object has no attribute 'type'\n",
+          "exitCode": 1
+        },
+        "modernStart": {
+          "callbacks": 1544,
+          "medianSeconds": 0.009020700003020465,
+          "samplesSeconds": [
+            0.00972605999559164,
+            0.009020700003020465,
+            0.008973539993166923,
+            0.008905039983801544,
+            0.008870019996538758,
+            0.009788420004770159,
+            0.009213420003652573
+          ]
+        },
+        "current": {
+          "callbacks": 1544,
+          "medianSeconds": 0.007116660010069609,
+          "samplesSeconds": [
+            0.0073257999960333105,
+            0.007075999979861081,
+            0.007035079994238913,
+            0.007213540002703666,
+            0.007116660010069609,
+            0.006995739997364581,
+            0.007549580000340938
+          ]
+        }
+      },
+      "currentToModernStart": 0.7889254722678603
+    },
+    {
+      "size": "medium",
+      "operation": "customVisitor",
+      "representation": "native",
+      "results": {
+        "original": {
+          "callbacks": 5913,
+          "medianSeconds": 0.006522320001386106,
+          "samplesSeconds": [
+            0.00660420001950115,
+            0.0066788399824872615,
+            0.0064520800020545725,
+            0.006371239991858601,
+            0.006406899983994662,
+            0.006522320001386106,
+            0.006760359997861088
+          ]
+        },
+        "modernStart": {
+          "callbacks": 6489,
+          "medianSeconds": 0.012027780013158917,
+          "samplesSeconds": [
+            0.012027780013158917,
+            0.012005300004966557,
+            0.012126779998652637,
+            0.012382999993860722,
+            0.012164900009520353,
+            0.011935800011269749,
+            0.011887640017084778
+          ]
+        },
+        "current": {
+          "callbacks": 6489,
+          "medianSeconds": 0.010497580002993345,
+          "samplesSeconds": [
+            0.011327799991704524,
+            0.010352439992129803,
+            0.01019631999079138,
+            0.009961899998597801,
+            0.010648639989085495,
+            0.010707340016961098,
+            0.010497580002993345
+          ]
+        }
+      },
+      "currentToModernStart": 0.8727778518985659,
+      "originalCallbackParity": false,
+      "currentToOriginal": 1.6094855819344078
+    },
+    {
+      "size": "medium",
+      "operation": "customVisitor",
+      "representation": "parserNative",
+      "results": {
+        "original": {
+          "callbacks": 5913,
+          "medianSeconds": 0.0057675799820572134,
+          "samplesSeconds": [
+            0.005388260004110634,
+            0.006052560009993613,
+            0.005657180002890528,
+            0.005911500006914139,
+            0.005686380015686154,
+            0.0057675799820572134,
+            0.0063816200010478495
+          ]
+        },
+        "modernStart": {
+          "callbacks": 6489,
+          "medianSeconds": 0.017049499996937813,
+          "samplesSeconds": [
+            0.017093660007230938,
+            0.01679054000414908,
+            0.017049499996937813,
+            0.016684479988180102,
+            0.017668460006825627,
+            0.017134519992396235,
+            0.016934040002524853
+          ]
+        },
+        "current": {
+          "callbacks": 6489,
+          "medianSeconds": 0.013866539997979998,
+          "samplesSeconds": [
+            0.014755779993720353,
+            0.01431413998361677,
+            0.0136071200016886,
+            0.01450942000374198,
+            0.013819320010952652,
+            0.013769180001690983,
+            0.013866539997979998
+          ]
+        }
+      },
+      "currentToModernStart": 0.8133106542989829,
+      "originalCallbackParity": false,
+      "currentToOriginal": 2.40422153504909
+    },
+    {
+      "size": "medium",
+      "operation": "customVisitor",
+      "representation": "mapping",
+      "results": {
+        "original": {
+          "error": "Traceback (most recent call last):\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 43, in <module>\n    operation();node_count=count;count=0\n    ^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/worker.py\", line 40, in <lambda>\n    operation=lambda:walk.full(tree,callback,Custom())\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 113, in full\n    c(node, state, override)\n  File \"<workspace>/implementation-artifacts/performance-round2/walker-utils/snapshots/original/acornwalk/acornwalk/walk.py\", line 108, in c\n    _type = override or node.type\n                        ^^^^^^^^^\nAttributeError: 'dict' object has no attribute 'type'\n",
+          "exitCode": 1
+        },
+        "modernStart": {
+          "callbacks": 6489,
+          "medianSeconds": 0.010622880002483726,
+          "samplesSeconds": [
+            0.010612199991010129,
+            0.010399279999546707,
+            0.0107865400146693,
+            0.010420119995251298,
+            0.010889380006119609,
+            0.010622880002483726,
+            0.010791039979085326
+          ]
+        },
+        "current": {
+          "callbacks": 6489,
+          "medianSeconds": 0.009663340006954967,
+          "samplesSeconds": [
+            0.009491220000199974,
+            0.00959228000137955,
+            0.009727140003815294,
+            0.009567700000479818,
+            0.009670579992234706,
+            0.0097449199995026,
+            0.009663340006954967
+          ]
+        }
+      },
+      "currentToModernStart": 0.9096723303563243
+    }
+  ],
+  "note": "The subsequent slot-state copy/pickle fix changes result copying only. Traversal/readers/dispatch are unchanged from the exact measured revision."
+}

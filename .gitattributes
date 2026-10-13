@@ -1,0 +1,3 @@
+# The upstream reference module is verified against its published byte checksum.
+# Preserve exact source bytes on Windows as well as Unix checkouts.
+tests/reference/acorn-walk-8.15.0.mjs -text
