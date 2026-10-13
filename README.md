@@ -106,3 +106,5 @@ offsets, native aliases and the documented JSX extension.
 compare the original, modern
 starting and current versions, including the old destructuring omission and
 remaining native validation cost.
+
+Release automation and version bumps are documented in [RELEASING.md](https://github.com/0o120/acornwalk-python/blob/master/RELEASING.md).

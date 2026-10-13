@@ -44,5 +44,5 @@ packages = ["acornwalk"]
 [tool.hatch.build.targets.sdist]
 include = ["/acornwalk", "/tests", "/tools", "/.github", "/LICENSE", "/README.md",
     "/pyproject.toml", "/requirements-dev.in", "/requirements-dev.lock",
-    "/CHANGELOG.md", "/CONTRIBUTING.md", "/IMPLEMENTATION_STATUS.md",
+    "/CHANGELOG.md", "/RELEASING.md", "/CONTRIBUTING.md", "/IMPLEMENTATION_STATUS.md",
     "/PERFORMANCE.md", "/performance.json", "/performance-round2.json"]
