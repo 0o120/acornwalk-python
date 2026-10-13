@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 — next release
+## 2.0.0 — 2026-10-13
 
 - Require Python 3.11+; preserve import and camelCase APIs, export all public walkers/searches.
 - Repair all traversal/search engine failures, category dispatch, override isolation,
