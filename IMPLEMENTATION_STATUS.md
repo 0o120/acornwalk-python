@@ -1,6 +1,6 @@
 # Implementation status
 
-2.0.0 is prepared locally and unreleased. Audit items W01–W17 are addressed.
+2.0.0 is the next stable release. Audit items W01–W17 are addressed.
 The API and compatibility contract are described in README and CHANGELOG.
 
 Evidence on Python 3.11 and 3.12 / Node.js 24:

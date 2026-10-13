@@ -7,26 +7,33 @@ name = "acornwalk"
 dynamic = ["version"]
 authors = [{name = "0x78", email = "contact@0x78.com"}]
 requires-python = ">=3.11"
-description = "Semantic ECMAScript and JSX traversal for native and mapping ESTree ASTs"
+description = "Pure Python ECMAScript 2026 and JSX traversal for native and mapping ESTree ASTs"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-keywords = ["ecmascript", "javascript", "walker", "acorn", "ast", "estree"]
+keywords = ["ecmascript", "javascript", "walker", "acorn", "ast", "estree", "jsx"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
     "Topic :: Software Development :: Compilers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: JavaScript",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
+    "Typing :: Typed",
 ]
 
 [project.urls]
 Homepage = "https://github.com/0o120/acornwalk-python"
+Source = "https://github.com/0o120/acornwalk-python"
 Issues = "https://github.com/0o120/acornwalk-python/issues"
+Documentation = "https://github.com/0o120/acornwalk-python#readme"
+Changelog = "https://github.com/0o120/acornwalk-python/blob/master/CHANGELOG.md"
 
 [tool.hatch.version]
 path = "acornwalk/_version.py"

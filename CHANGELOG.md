@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 — unreleased
+## 2.0.0 — next release
 
 - Require Python 3.11+; preserve import and camelCase APIs, export all public walkers/searches.
 - Repair all traversal/search engine failures, category dispatch, override isolation,
@@ -17,6 +17,9 @@
   rather than loading typing/dataclass machinery on runtime import.
 - Add module attributes, dynamic import options, modern field adapter and JSX handlers.
 - Add pinned reference parity, seeded search properties, packaging checks and CI.
+- Prepare stable PyPI metadata, MIT license identification, shipped typing
+  information and absolute documentation links. Distribution checks follow
+  the configured package version so future release bumps remain valid.
 
 Migration: searches require nonnegative integer UTF-16 positions and raise clear
 errors for unavailable/invalid ranges. Ancestor walkers preserve explicit falsey

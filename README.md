@@ -6,8 +6,15 @@ dependencies. Native parser objects and deserialized mappings are accepted
 without copying nodes or mutating the AST.
 
 ```console
-python -m pip install acornwalk
+python -m pip install "acornwalk>=2,<3"
 ```
+
+The 2.x release preserves the import and camelCase APIs and requires Python
+3.11 or newer. It has no runtime dependencies. For native parser ASTs, install
+`esprima-fork` 5.x separately (imported as `esprima`) and request `range=True`
+when using position searches. See the
+[migration notes](https://github.com/0o120/acornwalk-python/blob/master/CHANGELOG.md)
+for the changes to searches, callback state and result objects.
 
 ```python
 import acornwalk as walk
@@ -88,12 +95,14 @@ unknown declaration kind with existing node shapes does not advertise parser
 support for proposals. Circular graphs and excessive recursion depth are outside
 the AST contract.
 
-See [contributor instructions](CONTRIBUTING.md), [migration notes](CHANGELOG.md)
-and [implementation evidence](IMPLEMENTATION_STATUS.md). Core parity is pinned
+See [contributor instructions](https://github.com/0o120/acornwalk-python/blob/master/CONTRIBUTING.md)
+and [implementation evidence](https://github.com/0o120/acornwalk-python/blob/master/IMPLEMENTATION_STATUS.md).
+Core parity is pinned
 to [acorn-walk in acorn 8.15.0](https://github.com/acornjs/acorn/tree/8.15.0/acorn-walk).
 Python differences include `None` state handling, mappings/ranges, validated
 offsets, native aliases and the documented JSX extension.
 
-[Performance measurements](PERFORMANCE.md) compare the original, modern
+[Performance measurements](https://github.com/0o120/acornwalk-python/blob/master/PERFORMANCE.md)
+compare the original, modern
 starting and current versions, including the old destructuring omission and
 remaining native validation cost.
