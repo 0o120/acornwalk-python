@@ -552,18 +552,15 @@ class Base:
         return self.__dict__[key] if key in self.__dict__ else getattr(type(self), key)
         
     def Program(node, st, c):
-        read = _field_reader(node)
-        for stmt in read("body"):
+        for stmt in getField(node, "body"):
             c(stmt, st, "Statement")
 
     def BlockStatement(node, st, c):
-        read = _field_reader(node)
-        for stmt in read("body"):
+        for stmt in getField(node, "body"):
             c(stmt, st, "Statement")
     
     def StaticBlock(node, st, c):
-        read = _field_reader(node)
-        for stmt in read("body"):
+        for stmt in getField(node, "body"):
             c(stmt, st, "Statement")
 
     Statement = skipThrough
@@ -571,16 +568,13 @@ class Base:
     EmptyStatement = ignore
 
     def ExpressionStatement(node, st, c):
-        read = _field_reader(node)
-        return c(read("expression"), st, "Expression")
+        return c(getField(node, "expression"), st, "Expression")
     
     def ParenthesizedExpression(node, st, c):
-        read = _field_reader(node)
-        return c(read("expression"), st, "Expression")
+        return c(getField(node, "expression"), st, "Expression")
     
     def ChainExpression(node, st, c):
-        read = _field_reader(node)
-        return c(read("expression"), st, "Expression")
+        return c(getField(node, "expression"), st, "Expression")
         
     def IfStatement(node, st, c):
         read = _field_reader(node)
@@ -590,8 +584,7 @@ class Base:
             c(read("alternate"), st, "Statement")
     
     def LabeledStatement(node, st, c):
-        read = _field_reader(node)
-        return c(read("body"), st, "Statement")
+        return c(getField(node, "body"), st, "Statement")
     
     BreakStatement = ignore
     
@@ -631,12 +624,10 @@ class Base:
             c(read("argument"), st, "Expression")
 
     def ThrowStatement(node, st, c):
-        read = _field_reader(node)
-        return c(read("argument"), st, "Expression")
+        return c(getField(node, "argument"), st, "Expression")
     
     def SpreadElement(node, st, c):
-        read = _field_reader(node)
-        c(read("argument"), st, "Expression")
+        c(getField(node, "argument"), st, "Expression")
     
     def TryStatement(node, st, c):
         read = _field_reader(node)
@@ -686,8 +677,7 @@ class Base:
         c(read("body"), st, "Statement")
 
     def ForInit(node, st, c):
-        read = _field_reader(node)
-        if read("type") == "VariableDeclaration":
+        if getField(node, "type") == "VariableDeclaration":
             c(node, st)
         else:
             c(node, st, "Expression")
@@ -698,8 +688,7 @@ class Base:
         return c(node, st, "Function")
 
     def VariableDeclaration(node, st, c):
-        read = _field_reader(node)
-        for decl in read("declarations"):
+        for decl in getField(node, "declarations"):
             c(decl, st)
 
     def VariableDeclarator(node, st, c):
@@ -730,18 +719,15 @@ class Base:
     MemberPattern = skipThrough
 
     def RestElement(node, st, c):
-        read = _field_reader(node)
-        return c(read("argument"), st, "Pattern")
+        return c(getField(node, "argument"), st, "Pattern")
 
     def ArrayPattern(node, st, c):
-        read = _field_reader(node)
-        for elt in read("elements"):
+        for elt in getField(node, "elements"):
             if elt:
                 c(elt, st, "Pattern")
 
     def ObjectPattern(node, st, c):
-        read = _field_reader(node)
-        for prop in read("properties"):
+        for prop in getField(node, "properties"):
             if getField(prop, "type") == 'Property':
                 if getField(prop, "computed"):
                     c(getField(prop, "key"), st, "Expression")
@@ -758,14 +744,12 @@ class Base:
     MetaProperty = ignore
 
     def ArrayExpression(node, st, c):
-        read = _field_reader(node)
-        for elt in read("elements"):
+        for elt in getField(node, "elements"):
             if elt:
                 c(elt, st, "Expression")
 
     def ObjectExpression(node, st, c):
-        read = _field_reader(node)
-        for prop in read("properties"):
+        for prop in getField(node, "properties"):
             c(prop, st)
 
     def FunctionExpression(node, st, c):
@@ -775,8 +759,7 @@ class Base:
         return c(node, st, "Function")
 
     def SequenceExpression(node, st, c):
-        read = _field_reader(node)
-        for expr in read("expressions"):
+        for expr in getField(node, "expressions"):
             c(expr, st, "Expression")
 
     def TemplateLiteral(node, st, c):
@@ -789,12 +772,10 @@ class Base:
     TemplateElement = ignore
 
     def UnaryExpression(node, st, c):
-        read = _field_reader(node)
-        c(read("argument"), st, "Expression")
+        c(getField(node, "argument"), st, "Expression")
 
     def UpdateExpression(node, st, c):
-        read = _field_reader(node)
-        c(read("argument"), st, "Expression")
+        c(getField(node, "argument"), st, "Expression")
 
     def BinaryExpression(node, st, c):
         read = _field_reader(node)
@@ -876,8 +857,7 @@ class Base:
             c(attribute, st)
 
     def ImportAttribute(node, st, c):
-        read = _field_reader(node)
-        c(read("value"), st, "Expression")
+        c(getField(node, "value"), st, "Expression")
 
     def ImportExpression(node, st, c):
         read = _field_reader(node)
@@ -921,8 +901,7 @@ class Base:
         c(read("body"), st)
 
     def ClassBody(node, st, c):
-        read = _field_reader(node)
-        for elt in read("body"):
+        for elt in getField(node, "body"):
             c(elt, st)
 
     def MethodDefinition(node, st, c):
@@ -955,8 +934,7 @@ class Base:
     AccessorProperty = PropertyDefinition
 
     def Decorator(node, st, c):
-        read = _field_reader(node)
-        c(read("expression"), st, "Expression")
+        c(getField(node, "expression"), st, "Expression")
 
     # JSX is an explicit parser extension. Names have JSX-specific leaf types,
     # so they are observable without being reported as evaluated Identifiers.
@@ -982,8 +960,7 @@ class Base:
             c(attribute, st)
 
     def JSXClosingElement(node, st, c):
-        read = _field_reader(node)
-        c(read("name"), st)
+        c(getField(node, "name"), st)
 
     def JSXAttribute(node, st, c):
         read = _field_reader(node)
@@ -992,17 +969,14 @@ class Base:
             c(read("value"), st)
 
     def JSXExpressionContainer(node, st, c):
-        read = _field_reader(node)
-        expression = read("expression")
+        expression = getField(node, "expression")
         c(expression, st, None if _kind(expression) == "JSXEmptyExpression" else "Expression")
 
     def JSXSpreadAttribute(node, st, c):
-        read = _field_reader(node)
-        c(read("argument"), st, "Expression")
+        c(getField(node, "argument"), st, "Expression")
 
     def JSXSpreadChild(node, st, c):
-        read = _field_reader(node)
-        c(read("expression"), st, "Expression")
+        c(getField(node, "expression"), st, "Expression")
 
     def JSXMemberExpression(node, st, c):
         read = _field_reader(node)

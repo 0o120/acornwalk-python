@@ -1,5 +1,38 @@
 # Performance evidence
 
+## Post-gap performance audit — October 2026
+
+Twenty-six semantic handlers that read one field now call `getField` directly,
+avoiding construction of a temporary bound reader. Handlers that read multiple
+fields keep their existing readers. Descriptor/mapping access, dynamic visitor
+changes, callback order/state and input identity contracts remain covered.
+
+| YouTube full walk | Before, seconds | After, seconds | Less time |
+| --- | ---: | ---: | ---: |
+| Native AST | 3.257 | 3.145 | 3.4% |
+| Mapping AST | 1.851 | 1.702 | 8.0% |
+
+The component matrix generally improves about 1.6-6.0%; the small native
+comments case is 2.1% slower. Full-file callback signatures match exactly.
+All 74 methods and 14 subtests pass on CPython 3.11-3.15, alongside 2,457
+coordinated traversal immutability checks.
+
+Measurements use CPython 3.12.0 on Windows, default garbage collection and
+sequential alternating before/after processes. Large-file figures are medians
+of three fresh processes per version. Component figures use three fresh
+processes per version, seven warmed calls per process and the median of process
+medians. All raw samples, including outliers and small regressions, are retained.
+Imports, input reading and correctness comparisons are outside timing windows.
+
+Reproduction scripts, exact Python source hashes, profiles, logs, environments,
+and distributions are outside the repositories in
+`C:/Users/Ryzen/Benchmarks/toolchain-performance-2026-10-13/`.
+The report covers first-call/allocation costs, compatibility fallbacks and
+Python 3.11/3.15 boundary timings as well as the main comparisons. These are
+workload-specific results, not a universal speed guarantee.
+
+## Earlier performance work
+
 The second optimization round compares the original master (`0f8e69a`), the
 modern starting implementation (`0f5d34e`), and measured revision `f5b1f51`.
 The later `82257ff` result-copying repair leaves traversal unchanged.

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Avoid allocating temporary readers in single-field handlers while preserving
+  the existing native/mapping accessor and callback contracts.
+
 - Traverse decorators and auto-accessors, resource bindings and module phases
   through the existing native/mapping APIs without modifying caller nodes.
 - Preserve searches for decorators preceding exported classes when child ranges
