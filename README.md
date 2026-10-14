@@ -89,7 +89,14 @@ use ordinary expression/leaf shapes. Legacy `FieldDefinition` is accepted as a
 names, attributes, expression containers, spread attributes/children and empty
 expressions. JSX names keep their JSX-specific node types.
 
-TypeScript, Flow, decorators and other proposal nodes require custom visitors.
+Decorators (`Decorator.expression`), decorated class/member arrays and
+auto-accessors (`AccessorProperty`) have built-in handlers. Resource declaration
+bindings and source/deferred import phases use their ordinary ESTree child
+roles. Source positions preceding exported classes remain searchable even when
+the class's decorators begin before the export wrapper's range; search matches
+still use the original node bounds.
+
+TypeScript, Flow and unrelated proposal nodes require custom visitors.
 The walker does not validate grammar or editions. Mechanically walking an
 unknown declaration kind with existing node shapes does not advertise parser
 support for proposals. Circular graphs and excessive recursion depth are outside

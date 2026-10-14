@@ -6,7 +6,7 @@ import subprocess
 import unittest
 
 import acornwalk as walk
-from fixtures import fixtures
+from fixtures import fixtures, proposal_fixtures
 
 REFERENCE = Path(__file__).parent / "reference"
 
@@ -17,7 +17,7 @@ class ReferenceTests(unittest.TestCase):
         supported = {name for name in vars(walk.Base) if not name.startswith("_") and callable(getattr(walk.Base, name))}
         supported -= categories | {"FieldDefinition"}
         supported = {name for name in supported if not name.startswith("JSX")}
-        self.assertEqual(supported, {node["type"] for node in fixtures()})
+        self.assertEqual(supported, {node["type"] for node in fixtures() + proposal_fixtures()})
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is needed only for upstream differential tests")
     def test_pinned_upstream_full_and_ancestor_order(self):

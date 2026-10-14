@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Traverse decorators and auto-accessors, resource bindings and module phases
+  through the existing native/mapping APIs without modifying caller nodes.
+- Preserve searches for decorators preceding exported classes when child ranges
+  extend outside export wrapper ranges; keep actual bounds for matching and
+  ordinary subtree pruning.
+
 ## 2.0.0 — 2026-10-13
 
 - Require Python 3.11+; preserve import and camelCase APIs, export all public walkers/searches.

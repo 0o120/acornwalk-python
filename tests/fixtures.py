@@ -25,6 +25,15 @@ def function(kind):
     return node(kind, id=identifier("f"), params=[identifier("a")], body=block(), expression=False)
 
 
+def proposal_fixtures():
+    """Extension nodes absent from the pinned upstream walker."""
+    return [node("Decorator", expression=identifier("dec")),
+            node("AccessorProperty", decorators=[node("Decorator", expression=identifier("field"))],
+                 key=identifier("key"), computed=True, value=literal()),
+            node("ExportDefaultSpecifier", exported=identifier("defaultName")),
+            node("ExportNamespaceSpecifier", exported=identifier("ns"))]
+
+
 def fixtures():
     attr = lambda: node("ImportAttribute", key=identifier("type"), value=literal("json"))
     prop = lambda: node("Property", key=literal("k"), value=literal(), computed=True)

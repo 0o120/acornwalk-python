@@ -414,6 +414,25 @@ def fullAncestor(node, callback, baseVisitor=None, state=None, override=None):
     c(node, state, override)
 
 
+def _search_range(node, kind, start, end):
+    """Include a decorated exported class when pruning its export wrapper.
+
+    Babel-compatible export ranges begin at `export`, while a leading
+    decorator belongs to the class and can start before that wrapper. Keep
+    the node's own range for matching; only its traversal bounds expand.
+    """
+    if kind == "Statement":
+        kind = _kind(node)
+    if kind not in ("ExportNamedDeclaration", "ExportDefaultDeclaration"):
+        return start, end
+    declaration = getField(node, "declaration")
+    if (declaration is not None and _kind(declaration) in ("ClassDeclaration", "ClassExpression")
+            and getField(declaration, "decorators")):
+        child_start, child_end = nodeRange(declaration)
+        return min(start, child_start), max(end, child_end)
+    return start, end
+
+
 def findNodeAt(node: object, start: int | None, end: int | None, test=None, baseVisitor=None, state=None) -> Found | None:
     """Find the innermost matching exact range; None is a wildcard."""
     if start is not None:
@@ -427,7 +446,8 @@ def findNodeAt(node: object, start: int | None, end: int | None, test=None, base
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
         kind = _kind(node, override)
-        if (start is None or node_start <= start) and (end is None or node_end >= end):
+        search_start, search_end = _search_range(node, kind, node_start, node_end)
+        if (start is None or search_start <= start) and (end is None or search_end >= end):
             dispatch(visitor, kind)(node, st, c)
         if (start is None or node_start == start) and (end is None or node_end == end) and test(kind, node):
             raise _Found(node, st)
@@ -446,10 +466,11 @@ def findNodeAround(node: object, pos: int, test=None, baseVisitor=None, state=No
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
         kind = _kind(node, override)
-        if node_start > pos or node_end < pos:
+        search_start, search_end = _search_range(node, kind, node_start, node_end)
+        if search_start > pos or search_end < pos:
             return
         dispatch(visitor, kind)(node, st, c)
-        if test(kind, node):
+        if node_start <= pos <= node_end and test(kind, node):
             raise _Found(node, st)
     try:
         c(node, state)
@@ -487,9 +508,10 @@ def findNodeBefore(node: object, pos: int, test=None, baseVisitor=None, state=No
     def c(node, st, override=None):
         node_start, node_end = nodeRange(node)
         nonlocal best
-        if node_start > pos:
-            return
         kind = _kind(node, override)
+        search_start, _ = _search_range(node, kind, node_start, node_end)
+        if search_start > pos:
+            return
         if node_end <= pos and (best is None or nodeRange(best.node)[1] < node_end) and test(kind, node):
             best = Found(node, st)
         dispatch(visitor, kind)(node, st, c)
@@ -868,6 +890,8 @@ class Base:
     ImportDefaultSpecifier = ignore
 
     ImportNamespaceSpecifier = ignore
+    ExportDefaultSpecifier = ignore
+    ExportNamespaceSpecifier = ignore
 
     Identifier = ignore
 
@@ -888,6 +912,8 @@ class Base:
 
     def Class(node, st, c):
         read = _field_reader(node)
+        for decorator in read("decorators", ()) or ():
+            c(decorator, st)
         if read("id"):
             c(read("id"), st, "Pattern")
         if read("superClass"):
@@ -901,6 +927,8 @@ class Base:
 
     def MethodDefinition(node, st, c):
         read = _field_reader(node)
+        for decorator in read("decorators", ()) or ():
+            c(decorator, st)
         if read("computed"):
             c(read("key"), st, "Expression")
         if read("value"):
@@ -908,6 +936,8 @@ class Base:
 
     def PropertyDefinition(node, st, c):
         read = _field_reader(node)
+        for decorator in read("decorators", ()) or ():
+            c(decorator, st)
         if read("computed"):
             c(read("key"), st, "Expression")
         if read("value"):
@@ -922,6 +952,11 @@ class Base:
 
     # The old parser used FieldDefinition for modern PropertyDefinition.
     FieldDefinition = PropertyDefinition
+    AccessorProperty = PropertyDefinition
+
+    def Decorator(node, st, c):
+        read = _field_reader(node)
+        c(read("expression"), st, "Expression")
 
     # JSX is an explicit parser extension. Names have JSX-specific leaf types,
     # so they are observable without being reported as evaluated Identifiers.
